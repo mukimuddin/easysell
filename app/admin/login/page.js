@@ -3,26 +3,27 @@
 import { useState } from 'react';
 
 export default function AdminLogin() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [passcode, setPasscode] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setError('');
+    
     try {
       const res = await fetch('/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ passcode }),
       });
       
       if (res.ok) {
         window.location.href = '/admin';
       } else {
         const data = await res.json();
-        setError(data.error || 'Failed to login');
+        setError(data.error || 'Invalid Passcode');
       }
     } catch (err) {
       setError('An error occurred during login');
@@ -32,9 +33,13 @@ export default function AdminLogin() {
   };
 
   return (
-    <main className="form-container" style={{ marginTop: '5rem' }}>
-      <h2 className="section-title" style={{ justifyContent: 'center', marginBottom: '2rem' }}>Admin Secure Login</h2>
+    <main className="form-container" style={{ marginTop: '5rem', maxWidth: '400px' }}>
+      <h2 className="section-title" style={{ justifyContent: 'center', marginBottom: '2rem' }}>Administrator Access</h2>
       
+      <p style={{ textAlign: 'center', color: 'var(--muted-foreground)', marginBottom: '1.5rem', fontSize: '0.85rem' }}>
+        Enter your secure passcode to manage the marketplace.
+      </p>
+
       <form onSubmit={handleLogin}>
         {error && (
           <div className="status-badge status-rejected" style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius)', marginBottom: '1.5rem', justifyContent: 'center' }}>
@@ -43,32 +48,22 @@ export default function AdminLogin() {
         )}
         
         <div className="form-group">
-          <label htmlFor="username">Admin ID</label>
-          <input 
-            type="text" 
-            id="username" 
-            className="form-control" 
-            value={username} 
-            onChange={(e) => setUsername(e.target.value)} 
-            required 
-            autoFocus 
-          />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="password">Password</label>
+          <label htmlFor="passcode">Admin Passcode</label>
           <input 
             type="password" 
-            id="password" 
+            id="passcode" 
             className="form-control" 
-            value={password} 
-            onChange={(e) => setPassword(e.target.value)} 
+            placeholder="······"
+            value={passcode} 
+            onChange={(e) => setPasscode(e.target.value)} 
             required 
+            autoFocus 
+            style={{ textAlign: 'center', fontSize: '1.5rem', letterSpacing: '0.25em' }}
           />
         </div>
         
-        <button type="submit" className="btn full-width" style={{ marginTop: '0.5rem' }} disabled={loading}>
-          {loading ? 'Authenticating...' : 'Login to Admin'}
+        <button type="submit" className="btn full-width" style={{ marginTop: '1rem', padding: '0.75rem' }} disabled={loading}>
+          {loading ? 'Verifying...' : 'Access Dashboard'}
         </button>
       </form>
     </main>

@@ -158,25 +158,26 @@ https://youtube.com/channel2..." required></textarea>
 
       <div style={{ marginTop: '3rem', borderTop: '1px solid var(--border)', paddingTop: '2rem' }}>
         <h3 className="section-title" style={{ fontSize: '1rem', marginBottom: '1rem' }}>Security Settings</h3>
+        <p style={{ fontSize: '0.8rem', color: 'var(--muted-foreground)', marginBottom: '1.5rem' }}>Update your administrator access passcode. Changes are saved directly to the database.</p>
         <form 
           className="form-container" 
-          style={{ margin: 0, padding: '1.5rem', maxWidth: '400px', boxShadow: 'none' }}
+          style={{ margin: 0, padding: '1.5rem', maxWidth: '400px', boxShadow: 'none', background: 'var(--muted)' }}
           onSubmit={async (e) => {
             e.preventDefault();
             const formData = new FormData(e.target);
-            const currentPassword = formData.get('currentPassword');
-            const newPassword = formData.get('newPassword');
+            const currentPasscode = formData.get('currentPasscode');
+            const newPasscode = formData.get('newPasscode');
             
             try {
-              const res = await fetch('/api/admin/change-password', {
+              const res = await fetch('/api/admin/change-passcode', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ currentPassword, newPassword })
+                body: JSON.stringify({ currentPasscode, newPasscode })
               });
               const data = await res.json();
               if (res.ok) {
-                alert('Password changed successfully! Please login again.');
-                handleLogout(); // Force relogin on change
+                alert('Passcode updated successfully! Please login again.');
+                handleLogout();
               } else {
                 alert('Error: ' + data.error);
               }
@@ -186,14 +187,14 @@ https://youtube.com/channel2..." required></textarea>
           }}
         >
           <div className="form-group">
-            <label htmlFor="currentPassword">Current Password</label>
-            <input type="password" id="currentPassword" name="currentPassword" className="form-control" required />
+            <label htmlFor="currentPasscode">Current Passcode</label>
+            <input type="password" id="currentPasscode" name="currentPasscode" className="form-control" required />
           </div>
           <div className="form-group">
-            <label htmlFor="newPassword">New Password</label>
-            <input type="password" id="newPassword" name="newPassword" className="form-control" required minLength="6" />
+            <label htmlFor="newPasscode">New Passcode</label>
+            <input type="password" id="newPasscode" name="newPasscode" className="form-control" required minLength="4" />
           </div>
-          <button type="submit" className="btn btn-sm" style={{ width: '100%', padding: '0.5rem' }}>Change Password</button>
+          <button type="submit" className="btn btn-sm" style={{ width: '100%', padding: '0.65rem' }}>Update Admin Passcode</button>
         </form>
       </div>
     </main>

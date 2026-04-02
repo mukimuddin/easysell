@@ -4,16 +4,34 @@ import pool from '@/lib/db';
 
 export async function POST(request) {
   try {
-    const { username, password } = await request.json();
+    const { passcode } = await request.json();
     
-    const validUsername = process.env.ADMIN_USERNAME || 'admin';
-    
-    // Check DB first for updated password
-    await pool.query(`CREATE TABLE IF NOT EXISTS admin_users (id INT PRIMARY KEY, username VARCHAR(50), password VARCHAR(255))`);
-    const [rows] = await pool.query(`SELECT password FROM admin_users WHERE username = 'admin'`);
-    const validPassword = rows.length > 0 ? rows[0].password : (process.env.ADMIN_PASSWORD || 'ytmarket2026');
+    // 1. Auto-Initialize the admin table if it's empty
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS admin_users (
+        id INT PRIMARY KEY,
+        username VARCHAR(50),
+        password VARCHAR(255)
+      )
+    `);
 
-    if (username === validUsername && password === validPassword) {
+    const [rows] = await pool.query('SELECT password FROM admin_users WHERE id = 1');
+    
+    let validPasscode;
+    if (rows.length === 0) {
+      // First time setup - use default or .env
+      validPasscode = process.env.ADMIN_PASSCODE || '123456';
+      await pool.execute(
+        'INSERT INTO admin_users (id, username, password) VALUES (1, "admin", ?)',
+        [validPasscode]
+      );
+      console.log('Admin user initialized in database.');
+    } else {
+      validPasscode = rows[0].password;
+    }
+
+    // 2. Compare the input passcode with the database value
+    if (passcode === validPasscode) {
       const { session, expiresAt } = await createSession();
       
       const response = NextResponse.json({ success: true });
@@ -26,7 +44,7 @@ export async function POST(request) {
       });
       return response;
     } else {
-      return NextResponse.json({ error: 'Invalid ID or Password' }, { status: 401 });
+      return NextResponse.json({ error: 'Invalid Passcode' }, { status: 401 });
     }
   } catch (err) {
     console.error('Login Error:', err);
