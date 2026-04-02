@@ -1,65 +1,109 @@
-import Image from "next/image";
+import Link from 'next/link';
+import pool from '@/lib/db';
 
-export default function Home() {
+export const dynamic = 'force-dynamic';
+
+export default async function Home(props) {
+  const searchParams = await props.searchParams;
+  const page = parseInt(searchParams.page) || 1;
+  const limit = 10;
+  const offset = (page - 1) * limit;
+
+  let channels = [];
+  let totalPages = 1;
+
+  try {
+    // Get total count for pagination
+    const [countRows] = await pool.query('SELECT COUNT(*) as total FROM channels WHERE status IN ("approved", "sold")');
+    const totalItems = countRows[0].total;
+    totalPages = Math.ceil(totalItems / limit);
+
+    // Get channels with limit and offset
+    const [rows] = await pool.query(
+      'SELECT * FROM channels WHERE status IN ("approved", "sold") ORDER BY created_at DESC LIMIT ? OFFSET ?',
+      [limit, offset]
+    );
+    channels = rows;
+  } catch (error) {
+    console.error('Failed to fetch channels:', error.message);
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.js file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main>
+      <section className="hero">
+        <h1>YouTube Marketplace</h1>
+        <p>Buy & sell quality YouTube channels securely with zero hassle.</p>
+      </section>
+
+      <section className="common-container">
+        <h2 className="section-title">Latest Opportunities</h2>
+        
+        <div className="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Owner Name</th>
+                <th>Channel Link</th>
+                <th style={{ textAlign: 'right' }}>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {channels.length === 0 ? (
+                <tr>
+                  <td colSpan="3" className="center-text" style={{ padding: '4rem 1rem', color: 'var(--muted-foreground)' }}>No channels available yet. Check back soon!</td>
+                </tr>
+              ) : (
+                channels.map((channel) => (
+                  <tr key={channel.id}>
+                    <td data-label="Owner" style={{ fontWeight: 600 }}>{channel.channel_name}</td>
+                    <td data-label="Channel">
+                      <a href={channel.channel_link} target="_blank" rel="noopener noreferrer" className="channel-link" style={{ fontSize: '0.875rem', color: 'var(--info)' }}>
+                        Visit Channel
+                      </a>
+                    </td>
+                    <td data-label="Action" style={{ textAlign: 'right' }}>
+                      <a href={`https://wa.me/${channel.whatsapp.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="btn btn-sm">Contact</a>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+
+        {totalPages > 1 && (
+          <div className="pagination">
+            <Link 
+              href={`/?page=${page - 1}`} 
+              className={`page-btn ${page === 1 ? 'disabled' : ''}`}
+              aria-disabled={page === 1}
+              style={page === 1 ? { pointerEvents: 'none', opacity: 0.5 } : {}}
+            >
+              &laquo;
+            </Link>
+            
+            {[...Array(totalPages)].map((_, i) => (
+              <Link 
+                key={i + 1}
+                href={`/?page=${i + 1}`} 
+                className={`page-btn ${page === i + 1 ? 'active' : ''}`}
+              >
+                {i + 1}
+              </Link>
+            ))}
+
+            <Link 
+              href={`/?page=${page + 1}`} 
+              className={`page-btn ${page === totalPages ? 'disabled' : ''}`}
+              aria-disabled={page === totalPages}
+              style={page === totalPages ? { pointerEvents: 'none', opacity: 0.5 } : {}}
+            >
+              &raquo;
+            </Link>
+          </div>
+        )}
+      </section>
+    </main>
   );
 }
+
