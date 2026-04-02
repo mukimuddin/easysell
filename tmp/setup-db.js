@@ -38,6 +38,16 @@ async function setup() {
       )
     `);
 
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS login_attempts (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        ip VARCHAR(45) NOT NULL,
+        attempts INT DEFAULT 1,
+        last_attempt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX (ip)
+      )
+    `);
+
     console.log('Tables created successfully!');
     await connection.end();
   } catch (err) {

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import pool from '@/lib/db';
+import bcrypt from 'bcryptjs';
 
 export async function POST(request) {
   try {
@@ -15,17 +16,29 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Admin user not initialized' }, { status: 404 });
     }
 
-    if (rows[0].password !== currentPasscode) {
+    const hashedCurrent = rows[0].password;
+    
+    // Check if it's already a bcrypt hash (starts with $2a$ or $2b$)
+    let isValid = false;
+    if (hashedCurrent.startsWith('$2')) {
+      isValid = await bcrypt.compare(currentPasscode, hashedCurrent);
+    } else {
+      // Legacy plain-text support
+      isValid = (currentPasscode === hashedCurrent);
+    }
+
+    if (!isValid) {
       return NextResponse.json({ error: 'Current passcode is incorrect' }, { status: 401 });
     }
 
-    // 2. Update to new passcode
+    // 2. Hash and update to new passcode
+    const hashedNew = bcrypt.hashSync(newPasscode, 10);
     await pool.execute(
       'UPDATE admin_users SET password = ? WHERE id = 1',
-      [newPasscode]
+      [hashedNew]
     );
 
-    return NextResponse.json({ success: true, message: 'Passcode changed successfully' });
+    return NextResponse.json({ success: true, message: 'Passcode changed and hashed successfully' });
   } catch (error) {
     console.error('Change Passcode Error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
