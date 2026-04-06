@@ -4,7 +4,8 @@ import { useEffect, useState, Suspense, useMemo, Fragment } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { 
   HiKey, HiPlus, HiRefresh, HiPencilAlt, 
-  HiOutlineTrash, HiChartBar, HiX, HiMenu 
+  HiOutlineTrash, HiChartBar, HiX, HiMenu,
+  HiTrendingUp, HiUsers, HiCube, HiCurrencyDollar, HiFire, HiStar
 } from 'react-icons/hi';
 import { getSocket } from '@/lib/socket';
 
@@ -21,13 +22,14 @@ const getTimeAgo = (date) => {
 
 function AdminContent() {
   const searchParams = useSearchParams();
-  const activeTab = searchParams.get('tab') || 'monitoring';
+  const activeTab = searchParams.get('tab') || 'dashboard';
   
   const [user, setUser] = useState(null);
   const [channels, setChannels] = useState([]);
   const [workers, setWorkers] = useState([]);
   const [admins, setAdmins] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [analytics, setAnalytics] = useState(null);
   
   const [showAddChannel, setShowAddChannel] = useState(false);
   const [showAddWorker, setShowAddWorker] = useState(false);
@@ -113,6 +115,22 @@ function AdminContent() {
       setLoading(false);
     }
   };
+
+  const loadAnalytics = async () => {
+    try {
+      const res = await fetch('/api/admin/analytics');
+      const data = await res.json();
+      setAnalytics(data);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'dashboard') {
+      loadAnalytics();
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     loadData();
@@ -270,7 +288,7 @@ function AdminContent() {
     <div className="admin-dashboard">
       <header className="admin-header">
         <h1 className="admin-title">
-           {activeTab === 'sales' ? 'Profit Ledger' : activeTab === 'admins' ? 'Users' : activeTab === 'sell' ? 'Sell Unit' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
+           {activeTab === 'sales' ? 'Profit Ledger' : activeTab === 'admins' ? 'Users' : activeTab === 'sell' ? 'Sell Unit' : activeTab === 'dashboard' ? 'Market Overview' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
         </h1>
         <div style={{ display: 'flex', gap: '0.4rem' }}>
            {activeTab === 'admins' && user.role === 'main' && (
@@ -290,6 +308,80 @@ function AdminContent() {
            )}
         </div>
       </header>
+
+
+      {activeTab === 'dashboard' && analytics && (
+        <div className="dashboard-content" style={{ marginBottom: '1.5rem' }}>
+           <div className="analytics-grid">
+              <div className="stat-card">
+                 <div className="stat-label">Total Revenue</div>
+                 <div className="stat-value">${parseFloat(analytics.summary.total_revenue || 0).toLocaleString()}</div>
+              </div>
+              <div className="stat-card">
+                 <div className="stat-label">Net Profit</div>
+                 <div className="stat-value">${parseFloat(analytics.summary.total_profit || 0).toLocaleString()}</div>
+              </div>
+              <div className="stat-card">
+                 <div className="stat-label">Active Stock</div>
+                 <div className="stat-value">{analytics.summary.active_count}</div>
+              </div>
+              <div className="stat-card">
+                 <div className="stat-label">Total Sold</div>
+                 <div className="stat-value">{analytics.summary.sold_count}</div>
+              </div>
+           </div>
+
+           <div className="dashboard-sections">
+              <div className="dashboard-card">
+                 <div className="dashboard-card-title">High Performance</div>
+                 <div className="bento-list">
+                    {analytics.bestChannels.map(c => (
+                      <div key={c.id} className="bento-item">
+                         <div className="bento-main">
+                            <div className="bento-name">{c.channel_name}</div>
+                            <div className="bento-sub">{c.worker_name || 'N/A'} • {c.status || 'New'}</div>
+                         </div>
+                         <div className="bento-badge">{c.sub_count?.toLocaleString() || 0}</div>
+                      </div>
+                    ))}
+                    {analytics.bestChannels.length === 0 && <div style={{ textAlign: 'center', padding: '0.5rem', color: '#94a3b8', fontSize: '10px' }}>No data</div>}
+                 </div>
+              </div>
+
+              <div className="dashboard-card">
+                 <div className="dashboard-card-title">Top Specialists</div>
+                 <div className="bento-list">
+                    {analytics.bestWorkers.map((w, idx) => (
+                      <div key={w.id} className="bento-item">
+                         <div className="bento-main">
+                            <div className="bento-name">{w.name}</div>
+                            <div className="bento-sub">{w.channel_count} Channels</div>
+                         </div>
+                         <div className="bento-badge">
+                            {w.total_subs?.toLocaleString() || 0}
+                         </div>
+                      </div>
+                    ))}
+                    {analytics.bestWorkers.length === 0 && <div style={{ textAlign: 'center', padding: '0.5rem', color: '#94a3b8', fontSize: '10px' }}>No data</div>}
+                 </div>
+
+                 <div className="dashboard-card-title" style={{ marginTop: '1rem' }}>Aging Summary</div>
+                 <div className="bento-list">
+                    {analytics.oldChannels.map(c => (
+                      <div key={c.id} className="bento-item">
+                         <div className="bento-main">
+                            <div className="bento-name">{c.channel_name}</div>
+                            <div className="bento-sub">{c.days_old}d in stock</div>
+                         </div>
+                         <div className="bento-badge">{c.open_date ? new Date(c.open_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '--'}</div>
+                      </div>
+                    ))}
+                    {analytics.oldChannels.length === 0 && <div style={{ textAlign: 'center', padding: '0.5rem', color: '#94a3b8', fontSize: '10px' }}>No data</div>}
+                 </div>
+              </div>
+           </div>
+        </div>
+      )}
 
       {showAddAdmin && (
         <div style={{ padding: '0.75rem', border: '1px solid #e2e8f0', borderRadius: '4px', marginBottom: '1rem', background: '#f8fafc' }}>

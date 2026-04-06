@@ -66,6 +66,9 @@ export default function ConditionalLayout({ children }) {
           </div>
           
           <nav className="sidebar-nav">
+             <Link href="/admin?tab=dashboard" className={`sidebar-link ${currentTab === 'dashboard' ? 'active' : ''}`}>
+               Dashboard
+             </Link>
              <Link href="/admin?tab=monitoring" className={`sidebar-link ${currentTab === 'monitoring' ? 'active' : ''}`}>
                Monitoring
              </Link>
