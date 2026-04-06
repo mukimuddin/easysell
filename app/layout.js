@@ -1,30 +1,25 @@
+import { Suspense } from 'react'
 import './globals.css'
-import Link from 'next/link'
-import Footer from '@/components/Footer'
+import ConditionalLayout from '@/components/ConditionalLayout'
 
 export const metadata = {
-  title: 'YT Marketplace - Buy & Sell Channels',
-  description: 'List your channel and get buyers easily',
+  title: 'YT Growth Centre - Support Creators',
+  description: 'Daily tracking and promotion for YouTube channels',
 }
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
-        <nav className="navbar">
-          <div className="nav-container">
-            <Link href="/" className="logo">YTM.</Link>
-            <div className="nav-links">
-              <Link href="/admin" className="nav-link">Admin</Link>
-            </div>
-          </div>
-        </nav>
-        <main>
-          {children}
-        </main>
-        <Footer />
+        <Suspense fallback={<div style={{ padding: '2rem' }}>Prerendering App...</div>}>
+          <ConditionalLayout>
+            {children}
+          </ConditionalLayout>
+        </Suspense>
       </body>
     </html>
   )
 }
+
+
 

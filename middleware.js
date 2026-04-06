@@ -18,7 +18,8 @@ export async function middleware(request) {
     }
     
     // If no valid session payload exists, deny access
-    if (!payload || payload.role !== 'admin') {
+    if (!payload || (payload.role !== 'main' && payload.role !== 'sub')) {
+
       if (path.startsWith('/api/')) {
         return NextResponse.json({ error: 'Unauthorized Access' }, { status: 401 });
       }

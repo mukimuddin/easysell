@@ -3,7 +3,8 @@
 import { useState } from 'react';
 
 export default function AdminLogin() {
-  const [passcode, setPasscode] = useState('');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -16,14 +17,14 @@ export default function AdminLogin() {
       const res = await fetch('/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ passcode }),
+        body: JSON.stringify({ username, password }),
       });
       
       const data = await res.json();
       if (res.ok) {
         window.location.href = '/admin';
       } else {
-        setError(data.error || 'Invalid Passcode');
+        setError(data.error || 'Invalid Credentials');
       }
     } catch (err) {
       setError('An error occurred during login');
@@ -33,39 +34,47 @@ export default function AdminLogin() {
   };
 
   return (
-    <main className="common-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '80vh' }}>
-      <div className="form-container" style={{ margin: 0, width: '100%', maxWidth: '360px', padding: '2rem' }}>
-        <h2 className="section-title" style={{ justifyContent: 'center', marginBottom: '1.5rem', fontSize: '1.25rem' }}>Admin Access</h2>
+    <main style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '1rem', background: '#ffffff' }}>
+      <div style={{ width: '100%', maxWidth: '340px', padding: '1.5rem', border: '1px solid #e2e8f0', borderRadius: '4px' }}>
+        <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1e293b', marginBottom: '1.5rem', textAlign: 'center' }}>Admin Access</h2>
         
         {error && (
-          <div className="status-badge status-rejected" style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius)', marginBottom: '1.5rem', justifyContent: 'center' }}>
+          <div style={{ color: '#dc2626', background: '#fee2e2', padding: '0.5rem', borderRadius: '4px', fontSize: '12px', marginBottom: '1rem', textAlign: 'center', fontWeight: 600 }}>
             {error}
           </div>
         )}
         
         <form onSubmit={handleLogin}>
-          <div className="form-group">
-            <label htmlFor="passcode" style={{ fontSize: '0.85rem' }}>Passcode</label>
+          <div className="compact-form-group">
+            <label style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Username</label>
             <input 
-              type="password" 
-              id="passcode" 
-              className="form-control" 
-              placeholder="······"
-              value={passcode} 
-              onChange={(e) => setPasscode(e.target.value)} 
+              type="text" 
+              className="compact-form-control" 
+              value={username} 
+              onChange={(e) => setUsername(e.target.value)} 
               required 
               autoFocus 
-              style={{ textAlign: 'center', fontSize: '1.5rem', letterSpacing: '0.3em' }}
             />
           </div>
           
-          <button type="submit" className="btn full-width" style={{ marginTop: '1rem', padding: '0.75rem' }} disabled={loading}>
-            {loading ? 'Verifying...' : 'Login'}
+          <div className="compact-form-group" style={{ marginTop: '0.75rem' }}>
+            <label style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Password</label>
+            <input 
+              type="password" 
+              className="compact-form-control" 
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)} 
+              required 
+            />
+          </div>
+          
+          <button type="submit" className="btn-sm" style={{ marginTop: '1.5rem', width: '100%', padding: '0.65rem', backgroundColor: '#1e293b', color: 'white', border: 'none', cursor: 'pointer', borderRadius: '4px', fontWeight: 600, fontSize: '13px' }} disabled={loading}>
+            {loading ? 'Verifying...' : 'Sign In'}
           </button>
         </form>
-        
+
         <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
-          <a href="/" style={{ fontSize: '0.85rem', color: 'var(--muted-foreground)', textDecoration: 'none' }}>← Back Home</a>
+          <a href="/" style={{ fontSize: '12px', color: '#64748b', textDecoration: 'none' }}>Back to Home</a>
         </div>
       </div>
     </main>

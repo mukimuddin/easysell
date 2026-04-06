@@ -7,7 +7,7 @@ export async function POST(request) {
   const ip = request.headers.get('x-forwarded-for') || '127.0.0.1';
   
   try {
-    const { passcode } = await request.json();
+    const { username, password } = await request.json();
     
     // 1. Check Rate Limiting
     const [attempts] = await pool.query(
@@ -28,45 +28,30 @@ export async function POST(request) {
         }, { status: 429 });
       }
 
-      // Reset attempts if lockout period passed
       if (diff >= LOCKOUT_MINUTES) {
         await pool.execute('DELETE FROM login_attempts WHERE ip = ?', [ip]);
       }
     }
 
-    // 2. Get Passcode from DB
-    const [rows] = await pool.query('SELECT password FROM admin_users WHERE id = 1');
+    // 2. Find User
+    const [users] = await pool.query('SELECT * FROM admin_users WHERE username = ?', [username]);
     
-    // Auto-init with bcrypt formatted 123456 if empty
-    if (rows.length === 0) {
-      const hashedDefault = bcrypt.hashSync('123456', 10);
-      await pool.execute('INSERT INTO admin_users (id, username, password) VALUES (1, "admin", ?)', [hashedDefault]);
-      return NextResponse.json({ error: 'System Initialized. Please try again with default 123456.' }, { status: 401 });
+    if (users.length === 0) {
+      return NextResponse.json({ error: 'Invalid Username or Password' }, { status: 401 });
     }
 
-    const hashedPasscode = rows[0].password;
+    const user = users[0];
 
-    // 3. Verify Passcode
-    // Check if it's already a bcrypt hash (starts with $2a$ or $2b$)
-    let isValid = false;
-    if (hashedPasscode.startsWith('$2')) {
-      isValid = await bcrypt.compare(passcode, hashedPasscode);
-    } else {
-      // Legacy plain-text support for first-time migration
-      isValid = (passcode === hashedPasscode);
-      if (isValid) {
-        // Automatically upgrade to bcrypt
-        const newHash = bcrypt.hashSync(passcode, 10);
-        await pool.execute('UPDATE admin_users SET password = ? WHERE id = 1', [newHash]);
-      }
-    }
+    // 3. Verify Password
+    const isValid = await bcrypt.compare(password, user.password);
 
     if (isValid) {
       // Success! Clear attempts
       await pool.execute('DELETE FROM login_attempts WHERE ip = ?', [ip]);
 
-      const { session, expiresAt } = await createSession();
-      const response = NextResponse.json({ success: true });
+      const { session, expiresAt } = await createSession(user.id, user.role);
+      const response = NextResponse.json({ success: true, role: user.role });
+      
       response.cookies.set('adminToken', session, { 
         httpOnly: true, 
         secure: process.env.NODE_ENV === 'production',
@@ -74,6 +59,7 @@ export async function POST(request) {
         sameSite: 'strict',
         path: '/' 
       });
+
       return response;
     } else {
       // Increment attempts
@@ -82,10 +68,11 @@ export async function POST(request) {
       } else {
         await pool.execute('INSERT INTO login_attempts (ip, attempts) VALUES (?, 1)', [ip]);
       }
-      return NextResponse.json({ error: 'Invalid Passcode' }, { status: 401 });
+      return NextResponse.json({ error: 'Invalid Username or Password' }, { status: 401 });
     }
   } catch (err) {
     console.error('Login Error:', err);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
+
