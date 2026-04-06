@@ -11,12 +11,21 @@ export async function GET() {
   }
 
   try {
-    const [rows] = await pool.query(`
+    let query = `
       SELECT w.*, adm.username as creator_name 
       FROM workers w 
-      LEFT JOIN admin_users adm ON w.created_by = adm.id 
-      ORDER BY w.name ASC
-    `);
+      LEFT JOIN admin_users adm ON w.created_by = adm.id
+    `;
+    const params = [];
+
+    if (session.role === 'sub') {
+      query += ` WHERE w.created_by = ?`;
+      params.push(session.userId);
+    }
+
+    query += ` ORDER BY w.name ASC`;
+
+    const [rows] = await pool.query(query, params);
     return NextResponse.json(rows);
   } catch (error) {
     console.error('Error fetching workers:', error);

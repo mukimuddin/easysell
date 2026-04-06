@@ -121,18 +121,20 @@ export default function ConditionalLayout({ children }) {
 
   return (
     <>
-      <nav className="navbar">
-        <div className="nav-container">
-          <Link href="/" className="logo">YTM.</Link>
-          <div className="nav-links">
-            <Link href="/admin" className="nav-link">Admin</Link>
+      {pathname !== '/' && (
+        <nav className="navbar">
+          <div className="nav-container">
+            <Link href="/" className="logo">YTM.</Link>
+            <div className="nav-links">
+              <Link href="/admin" className="nav-link">Admin</Link>
+            </div>
           </div>
-        </div>
-      </nav>
+        </nav>
+      )}
       <main>
         {children}
       </main>
-      <Footer />
+      {pathname !== '/' && <Footer />}
     </>
   );
 }

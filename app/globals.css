@@ -700,6 +700,56 @@ tr:hover { background-color: rgba(0,0,0,0.01); }
 
 .compact-form-control:focus { outline: none; border-color: var(--adm-accent); }
 
+/* Minimalist List for Home Page */
+.minimal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 1rem 0.5rem;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.minimal-item {
+  display: flex;
+  align-items: center;
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.6rem 0.75rem;
+  text-decoration: none;
+  color: var(--foreground);
+  transition: all 0.1s ease;
+}
+
+.minimal-item:hover {
+  background: var(--muted);
+  border-color: var(--muted-foreground);
+}
+
+.item-serial {
+  font-weight: 700;
+  color: var(--muted-foreground);
+  min-width: 2rem;
+  font-size: 0.8rem;
+}
+
+.item-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  flex: 1;
+}
+
+.admin-secret-link {
+  opacity: 0.1; /* High enough to be discoverable, low enough to stay 'hidden' */
+  transition: opacity 0.3s ease, transform 0.1s ease;
+}
+
+.admin-secret-link:hover, .admin-secret-link:active {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
 
 
 

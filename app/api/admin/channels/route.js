@@ -12,7 +12,9 @@ export async function GET() {
 
   try {
     let query = `
-      SELECT c.*, w.name as worker_name, adm.username as creator_name, adm.role as creator_role, u.sub_count, u.shorts_count, u.status 
+      SELECT c.*, w.name as worker_name, adm.username as creator_name, adm.role as creator_role, 
+             u.sub_count, u.shorts_count, u.status, 
+             DATE_FORMAT(u.created_at, '%Y-%m-%dT%H:%i:%sZ') as last_update_time
       FROM channels c 
       LEFT JOIN workers w ON c.worker_id = w.id 
       LEFT JOIN admin_users adm ON c.created_by = adm.id
@@ -50,6 +52,13 @@ export async function POST(request) {
     
     if (!channel_name || !channel_link) {
       return NextResponse.json({ error: 'Name and Link are required' }, { status: 400 });
+    }
+
+    if (session.role === 'sub' && worker_id) {
+       const [worker] = await pool.query('SELECT created_by FROM workers WHERE id = ?', [worker_id]);
+       if (worker.length === 0 || worker[0].created_by !== session.userId) {
+         return NextResponse.json({ error: 'Forbidden: Specialist not found or not owned' }, { status: 403 });
+       }
     }
 
     const [result] = await pool.execute(

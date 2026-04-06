@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { verifySession } from '@/lib/session';
 import { cookies } from 'next/headers';
+import { emitEvent } from '@/lib/socket';
 
 export async function PATCH(request, context) {
   const { id } = await context.params;
@@ -15,6 +16,8 @@ export async function PATCH(request, context) {
     const data = await request.json();
     const fields = [];
     const params = [];
+
+    // ... (rest of the fields logic)
 
     if (data.is_selected !== undefined) {
       fields.push('is_selected = ?');
@@ -75,6 +78,9 @@ export async function PATCH(request, context) {
       `UPDATE channels SET ${fields.join(', ')} WHERE id = ?`,
       params
     );
+
+    emitEvent('channel-updated', { id });
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error updating channel:', error);

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { verifySession } from '@/lib/session';
 import { cookies } from 'next/headers';
+import { emitEvent } from '@/lib/socket';
 
 export async function POST(request) {
   const token = (await cookies()).get('adminToken')?.value;
@@ -21,6 +22,9 @@ export async function POST(request) {
       'INSERT INTO daily_updates (channel_id, shorts_uploaded, shorts_count, sub_count, status) VALUES (?, ?, ?, ?, ?)',
       [channel_id, shorts_uploaded ? 1 : 0, shorts_count || 0, sub_count || 0, status || 'growing']
     );
+
+    // Notify dashboard about the update
+    emitEvent('channel-updated', { channel_id });
 
     return NextResponse.json({ success: true, id: result.insertId });
   } catch (error) {

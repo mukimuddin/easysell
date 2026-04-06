@@ -6,6 +6,18 @@ import {
   HiKey, HiPlus, HiRefresh, HiPencilAlt, 
   HiOutlineTrash, HiChartBar, HiX, HiMenu 
 } from 'react-icons/hi';
+import { getSocket } from '@/lib/socket';
+
+const getTimeAgo = (date) => {
+  if (!date) return null;
+  const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+  if (seconds < 60) return 'Just now';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return new Date(date).toLocaleDateString('en-GB');
+};
 
 function AdminContent() {
   const searchParams = useSearchParams();
@@ -104,6 +116,19 @@ function AdminContent() {
 
   useEffect(() => {
     loadData();
+
+    // WebSocket listener for real-time updates
+    const socket = getSocket();
+    if (socket) {
+      const handleUpdate = () => {
+        console.log('Real-time update received');
+        loadData();
+      };
+      socket.on('channel-updated', handleUpdate);
+      return () => {
+        socket.off('channel-updated', handleUpdate);
+      };
+    }
   }, []);
 
   // auto-close add sections when switching tabs
@@ -416,8 +441,19 @@ function AdminContent() {
                           <td data-label="Items"><div>{c.shorts_count || 0}</div></td>
                           <td data-label="Subs"><div>{c.sub_count ? c.sub_count.toLocaleString() : '---'}</div></td>
                           <td data-label="Status">
-                             <div style={{ fontSize: '11px', fontWeight: 700, color: c.status === 'growing' ? '#059669' : c.status === 'normal' ? '#475569' : '#dc2626' }}>
-                                {c.status?.toUpperCase() || 'NEW'}
+                             <div className="status-cell">
+                               <div style={{ fontSize: '11px', fontWeight: 700, color: c.status === 'growing' ? '#059669' : c.status === 'normal' ? '#475569' : '#dc2626' }}>
+                                  {c.status?.toUpperCase() || 'NEW'}
+                               </div>
+                               {c.last_update_time && (
+                                 <div style={{ fontSize: '9px', color: '#94a3b8', marginTop: '2px', display: 'flex', flexDirection: 'column' }}>
+                                    <span style={{ color: '#6366f1', fontWeight: 600 }}>{getTimeAgo(c.last_update_time)}</span>
+                                    <span>
+                                      {new Date(c.last_update_time).toLocaleDateString('en-GB')} • 
+                                      {new Date(c.last_update_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase()}
+                                    </span>
+                                 </div>
+                               )}
                              </div>
                           </td>
                           <td style={{ textAlign: 'right' }}>
@@ -706,8 +742,8 @@ function AdminContent() {
             <div className="modal-content">
                <div style={{ marginBottom: '1rem', fontWeight: 700 }}>Update: {activeChannel.channel_name}</div>
                <form onSubmit={handleAddDailyUpdate}>
-                  <div className="compact-form-group"><label>Uploads Today</label><input type="number" name="shorts_count" className="compact-form-control" defaultValue={0} /></div>
-                  <div className="compact-form-group"><label>Current Subs</label><input type="number" name="sub_count" className="compact-form-control" required /></div>
+                  <div className="compact-form-group"><label>Uploads Today</label><input type="number" name="shorts_count" className="compact-form-control" defaultValue={activeChannel.shorts_count || 0} /></div>
+                  <div className="compact-form-group"><label>Current Subs</label><input type="number" name="sub_count" className="compact-form-control" defaultValue={activeChannel.sub_count || 0} required /></div>
                   <div className="compact-form-group">
                     <label>Status</label>
                     <select name="status" className="compact-form-control" defaultValue={activeChannel.status || 'growing'}>
