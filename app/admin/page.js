@@ -9,6 +9,11 @@ import {
 } from 'react-icons/hi';
 import { getSocket } from '@/lib/socket';
 import { useUI } from '@/components/UIContext';
+import { 
+  ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid,
+  LineChart, Line, AreaChart, Area
+} from 'recharts';
 
 const getTimeAgo = (date) => {
   if (!date) return null;
@@ -529,6 +534,80 @@ function AdminContent() {
               <div className="stat-card">
                  <div className="stat-label">Total Sold</div>
                  <div className="stat-value">{analytics.summary.sold_count}</div>
+              </div>
+           </div>
+
+           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+              <div className="dashboard-card" style={{ minHeight: '300px' }}>
+                 <div className="dashboard-card-title">Stock Status Flow</div>
+                 <ResponsiveContainer width="100%" height={220}>
+                    <PieChart>
+                       <Pie
+                          data={analytics.statusDist || []}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={80}
+                          paddingAngle={5}
+                          dataKey="count"
+                          nameKey="status"
+                       >
+                          {(analytics.statusDist || []).map((entry, index) => (
+                             <Cell key={`cell-${index}`} fill={
+                                entry.status === 'growing' ? '#10b981' : 
+                                entry.status === 'normal' ? '#3b82f6' : 
+                                entry.status === 'flop' ? '#ef4444' : '#94a3b8'
+                             } />
+                          ))}
+                       </Pie>
+                       <Tooltip 
+                          contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', fontSize: '12px' }}
+                          formatter={(value, name) => [value, name.charAt(0).toUpperCase() + name.slice(1)]}
+                       />
+                       <Legend iconType="circle" wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
+                    </PieChart>
+                 </ResponsiveContainer>
+              </div>
+
+              <div className="dashboard-card" style={{ minHeight: '300px' }}>
+                 <div className="dashboard-card-title">Growth Velocity (Historical)</div>
+                 <ResponsiveContainer width="100%" height={220}>
+                    <AreaChart data={analytics.creationTrend || []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                       <defs>
+                          <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
+                             <stop offset="5%" stopColor="#1e293b" stopOpacity={0.1}/>
+                             <stop offset="95%" stopColor="#1e293b" stopOpacity={0}/>
+                          </linearGradient>
+                       </defs>
+                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                       <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} dy={10} />
+                       <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} />
+                       <Tooltip 
+                          contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', fontSize: '12px' }}
+                       />
+                       <Area type="monotone" dataKey="count" name="Channels Added" stroke="#1e293b" strokeWidth={2} fillOpacity={1} fill="url(#colorCount)" />
+                    </AreaChart>
+                 </ResponsiveContainer>
+              </div>
+
+              <div className="dashboard-card" style={{ minHeight: '300px' }}>
+                 <div className="dashboard-card-title">Specialist Benchmark</div>
+                 <ResponsiveContainer width="100%" height={220}>
+                    <BarChart data={analytics.bestWorkers.slice(0, 5)} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
+                       <XAxis type="number" hide />
+                       <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#1e293b', fontWeight: 600 }} width={80} />
+                       <Tooltip 
+                          cursor={{ fill: 'transparent' }}
+                          contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', fontSize: '12px' }}
+                          formatter={(value) => [value.toLocaleString(), 'Total Subs']}
+                       />
+                       <Bar dataKey="total_subs" radius={[0, 4, 4, 0]} barSize={20}>
+                          {analytics.bestWorkers.slice(0, 5).map((entry, index) => (
+                             <Cell key={`cell-${index}`} fill={['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][index % 5]} />
+                          ))}
+                       </Bar>
+                    </BarChart>
+                 </ResponsiveContainer>
               </div>
            </div>
 

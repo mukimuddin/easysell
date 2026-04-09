@@ -66,11 +66,33 @@ export async function GET() {
       LIMIT 10
     `);
 
+    // 5. Status Distribution (Active only)
+    const [statusDist] = await pool.query(`
+      SELECT COALESCE(u.status, 'new') as status, COUNT(*) as count 
+      FROM channels c
+      LEFT JOIN (
+          SELECT * FROM daily_updates WHERE id IN (SELECT MAX(id) FROM daily_updates GROUP BY channel_id)
+      ) u ON c.id = u.channel_id
+      WHERE c.is_sold = 0
+      GROUP BY status
+    `);
+
+    // 6. Creation Trend (Last 6 Months)
+    const [creationTrend] = await pool.query(`
+      SELECT DATE_FORMAT(created_at, '%b %Y') as month, COUNT(*) as count
+      FROM channels
+      GROUP BY DATE_FORMAT(created_at, '%Y-%m'), month
+      ORDER BY DATE_FORMAT(created_at, '%Y-%m') ASC
+      LIMIT 12
+    `);
+
     return NextResponse.json({
       summary: stats,
       bestWorkers,
       bestChannels,
-      oldChannels
+      oldChannels,
+      statusDist,
+      creationTrend
     });
   } catch (error) {
     console.error('Analytics Error:', error);
