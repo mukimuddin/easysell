@@ -521,11 +521,11 @@ function AdminContent() {
            <div className="analytics-grid">
               <div className="stat-card">
                  <div className="stat-label">Total Revenue</div>
-                 <div className="stat-value">${parseFloat(analytics.summary.total_revenue || 0).toLocaleString()}</div>
+                 <div className="stat-value">৳{parseFloat(analytics.summary.total_revenue || 0).toLocaleString()}</div>
               </div>
               <div className="stat-card">
                  <div className="stat-label">Net Profit</div>
-                 <div className="stat-value">${parseFloat(analytics.summary.total_profit || 0).toLocaleString()}</div>
+                 <div className="stat-value">৳{parseFloat(analytics.summary.total_profit || 0).toLocaleString()}</div>
               </div>
               <div className="stat-card">
                  <div className="stat-label">Active Stock</div>
@@ -1042,9 +1042,9 @@ function AdminContent() {
                     <tr>
                       <th>SL.</th>
                       <th>Channel</th>
-                      <th>Price</th>
-                      <th>Cost</th>
-                      <th>Profit</th>
+                      <th>Price (৳)</th>
+                      <th>Cost (৳)</th>
+                      <th>Profit (৳)</th>
                       <th style={{ textAlign: 'right' }}>Payout To</th>
                     </tr>
                   </thead>
@@ -1053,9 +1053,9 @@ function AdminContent() {
                       <tr key={c.id}>
                         <td data-label="SL.">{idx + 1}</td>
                         <td data-label="Channel"><div><a href={c.channel_link} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>{c.channel_name}</a></div></td>
-                        <td data-label="Price"><div style={{ color: '#059669' }}>{c.sell_price}</div></td>
-                        <td data-label="Cost"><div style={{ color: '#dc2626' }}>{c.worker_cost}</div></td>
-                        <td data-label="Profit"><div style={{ fontWeight: 700 }}>{(c.sell_price - c.worker_cost).toFixed(2)}</div></td>
+                        <td data-label="Price"><div style={{ color: '#059669' }}>৳{c.sell_price}</div></td>
+                        <td data-label="Cost"><div style={{ color: '#dc2626' }}>৳{c.worker_cost}</div></td>
+                        <td data-label="Profit"><div style={{ fontWeight: 700 }}>৳{(c.sell_price - c.worker_cost).toFixed(2)}</div></td>
                         <td style={{ textAlign: 'right' }} data-label="Payout To">
                            <div style={{ fontSize: '11px', fontWeight: 600, color: '#1e293b' }}>
                               {c.creator_role === 'sub' ? c.creator_name : (c.worker_name || 'SPECIALIST')}
@@ -1066,9 +1066,9 @@ function AdminContent() {
                     {soldChannels.length > 0 && (
                       <tr style={{ background: '#f8fafc', fontWeight: 700, borderTop: '2px solid #e2e8f0' }}>
                         <td colSpan="2" style={{ textAlign: 'right', fontSize: '10px', color: '#64748b' }}>TOTAL SUMMARY</td>
-                        <td style={{ color: '#059669' }}>{salesStats.totalRev.toFixed(2)}</td>
-                        <td style={{ color: '#dc2626' }}>{salesStats.totalCost.toFixed(2)}</td>
-                        <td style={{ color: '#1e293b' }}>{(salesStats.totalRev - salesStats.totalCost).toFixed(2)}</td>
+                        <td style={{ color: '#059669' }}>৳{salesStats.totalRev.toFixed(2)}</td>
+                        <td style={{ color: '#dc2626' }}>৳{salesStats.totalCost.toFixed(2)}</td>
+                        <td style={{ color: '#1e293b' }}>৳{(salesStats.totalRev - salesStats.totalCost).toFixed(2)}</td>
                         <td></td>
                       </tr>
                     )}
@@ -1196,14 +1196,14 @@ function AdminContent() {
               {sellWorkerId && (
                  <form onSubmit={handleBulkSell} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.75rem', alignItems: 'flex-end' }}>
                     <div className="compact-form-group" style={{ marginBottom: 0 }}>
-                      <label>Batch Total ($)</label>
+                      <label>Batch Total (৳)</label>
                       <input 
                         type="number" step="0.01" className="compact-form-control" placeholder="0.00" required 
                         value={batchRev} onChange={e => setBatchRev(e.target.value)}
                       />
                     </div>
                     <div className="compact-form-group" style={{ marginBottom: 0 }}>
-                      <label>Spec. Bill ($)</label>
+                      <label>Spec. Bill (৳)</label>
                       <input 
                         type="number" step="0.01" className="compact-form-control" placeholder="0.00" required 
                         value={batchCost} onChange={e => setBatchCost(e.target.value)}
@@ -1212,7 +1212,7 @@ function AdminContent() {
                     <div style={{ flex: '1' }}>
                        {selectedIds.length > 0 && (batchRev || batchCost) && (
                          <div style={{ fontSize: '10px', color: '#1e293b', marginBottom: '4px', fontWeight: 600 }}>
-                           {selectedIds.length} Picked • {((parseFloat(batchRev) || 0) / selectedIds.length).toFixed(2)} rev / {((parseFloat(batchCost) || 0) / selectedIds.length).toFixed(2)} cost each
+                           {selectedIds.length} Picked • ৳{((parseFloat(batchRev) || 0) / selectedIds.length).toFixed(2)} rev / ৳{((parseFloat(batchCost) || 0) / selectedIds.length).toFixed(2)} cost each
                          </div>
                        )}
                        <button type="submit" className="btn btn-sm" style={{ background: '#1e293b', color: '#fff', height: '31px', width: '100%', fontWeight: 700 }}>Execute Sale</button>
