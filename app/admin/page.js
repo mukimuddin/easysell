@@ -5,9 +5,10 @@ import { useSearchParams } from 'next/navigation';
 import { 
   HiKey, HiPlus, HiRefresh, HiPencilAlt, 
   HiOutlineTrash, HiChartBar, HiX, HiMenu,
-  HiTrendingUp, HiUsers, HiCube, HiCurrencyDollar, HiFire, HiStar
+  HiTrendingUp, HiUsers, HiCube, HiCurrencyDollar, HiFire, HiStar, HiOutlineClipboardCopy
 } from 'react-icons/hi';
 import { getSocket } from '@/lib/socket';
+import { useUI } from '@/components/UIContext';
 
 const getTimeAgo = (date) => {
   if (!date) return null;
@@ -21,6 +22,7 @@ const getTimeAgo = (date) => {
 };
 
 function AdminContent() {
+  const { showConfirm, toast } = useUI();
   const searchParams = useSearchParams();
   const activeTab = searchParams.get('tab') || 'dashboard';
   
@@ -30,12 +32,40 @@ function AdminContent() {
   const [admins, setAdmins] = useState([]);
   const [loading, setLoading] = useState(true);
   const [analytics, setAnalytics] = useState(null);
+  const [sources, setSources] = useState([]);
   
   const [showAddChannel, setShowAddChannel] = useState(false);
   const [showAddWorker, setShowAddWorker] = useState(false);
+  const [showAddSource, setShowAddSource] = useState(false);
   const [showAddAdmin, setShowAddAdmin] = useState(false);
   const [activeChannel, setActiveChannel] = useState(null);
   const [editChannel, setEditChannel] = useState(null); 
+  const [editWorker, setEditWorker] = useState(null);
+  const [editSource, setEditSource] = useState(null);
+
+  // YT Live Check States
+  const [ytLoading, setYtLoading] = useState(false);
+  const [ytSubs, setYtSubs] = useState(null);
+  const [newChannelName, setNewChannelName] = useState('');
+
+  const handleLinkBlur = async (e) => {
+    const url = e.target.value;
+    if (!url || (!url.includes('youtube.com') && !url.includes('youtu.be'))) return;
+    setYtLoading(true);
+    setYtSubs(null);
+    try {
+      const res = await fetch(`/api/admin/yt-info?url=${encodeURIComponent(url)}`);
+      const data = await res.json();
+      if (data.success) {
+        setYtSubs(data.subCountText);
+        if (data.title) setNewChannelName(data.title);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setYtLoading(false);
+    }
+  };
 
   // Bulk Sell State
   const [sellWorkerId, setSellWorkerId] = useState('');
@@ -51,14 +81,16 @@ function AdminContent() {
     search: '',
     workerId: 'all',
     kpiStatus: 'all',
-    marketStatus: 'all'
+    marketStatus: 'all',
+    sortBy: 'default',
+    sourceType: 'all'
   });
 
   const [batchRev, setBatchRev] = useState('');
   const [batchCost, setBatchCost] = useState('');
 
   const filteredActive = useMemo(() => {
-    return channels.filter(c => {
+    let result = channels.filter(c => {
       if (c.is_sold) return false;
       
       const matchesSearch = !filters.search || 
@@ -71,16 +103,48 @@ function AdminContent() {
 
       return matchesSearch && matchesWorker && matchesKPI && matchesMarket;
     });
+
+    if (filters.sortBy === 'subs_desc') {
+      result.sort((a, b) => (b.sub_count || 0) - (a.sub_count || 0));
+    } else if (filters.sortBy === 'subs_asc') {
+      result.sort((a, b) => (a.sub_count || 0) - (b.sub_count || 0));
+    } else if (filters.sortBy === 'date_desc') {
+      result.sort((a, b) => new Date(b.created_at || b.open_date || 0) - new Date(a.created_at || a.open_date || 0));
+    } else if (filters.sortBy === 'date_asc') {
+      result.sort((a, b) => new Date(a.created_at || a.open_date || 0) - new Date(b.created_at || b.open_date || 0));
+    } else if (filters.sortBy === 'name_asc') {
+      result.sort((a, b) => (a.channel_name || '').localeCompare(b.channel_name || ''));
+    } else if (filters.sortBy === 'name_desc') {
+      result.sort((a, b) => (b.channel_name || '').localeCompare(a.channel_name || ''));
+    }
+
+    return result;
   }, [channels, filters]);
 
   const filteredSold = useMemo(() => {
-    return channels.filter(c => {
+    let result = channels.filter(c => {
       if (!c.is_sold) return false;
       const matchesSearch = !filters.search || 
         c.channel_name?.toLowerCase().includes(filters.search.toLowerCase());
       const matchesWorker = filters.workerId === 'all' || c.worker_id == filters.workerId;
       return matchesSearch && matchesWorker;
     });
+
+    if (filters.sortBy === 'subs_desc') {
+      result.sort((a, b) => (b.sub_count || 0) - (a.sub_count || 0));
+    } else if (filters.sortBy === 'subs_asc') {
+      result.sort((a, b) => (a.sub_count || 0) - (b.sub_count || 0));
+    } else if (filters.sortBy === 'date_desc') {
+      result.sort((a, b) => new Date(b.created_at || b.open_date || 0) - new Date(a.created_at || a.open_date || 0));
+    } else if (filters.sortBy === 'date_asc') {
+      result.sort((a, b) => new Date(a.created_at || a.open_date || 0) - new Date(b.created_at || b.open_date || 0));
+    } else if (filters.sortBy === 'name_asc') {
+      result.sort((a, b) => (a.channel_name || '').localeCompare(b.channel_name || ''));
+    } else if (filters.sortBy === 'name_desc') {
+      result.sort((a, b) => (b.channel_name || '').localeCompare(a.channel_name || ''));
+    }
+
+    return result;
   }, [channels, filters]);
 
   const salesStats = useMemo(() => {
@@ -91,6 +155,25 @@ function AdminContent() {
     }, { totalRev: 0, totalCost: 0 });
   }, [filteredSold]);
 
+  const activeWorkers = useMemo(() => {
+    const activeWorkerIds = new Set(channels.filter(c => !c.is_sold).map(c => c.worker_id));
+    return workers.filter(w => activeWorkerIds.has(w.id));
+  }, [channels, workers]);
+
+  const filteredSources = useMemo(() => {
+    let result = sources || [];
+    if (filters.search) {
+      result = result.filter(s => 
+        (s.caption || '').toLowerCase().includes(filters.search.toLowerCase()) || 
+        (s.link || '').toLowerCase().includes(filters.search.toLowerCase())
+      );
+    }
+    if (filters.sourceType !== 'all') {
+      result = result.filter(s => s.audio === filters.sourceType);
+    }
+    return result;
+  }, [sources, filters]);
+
   const loadData = async () => {
     setLoading(true);
     try {
@@ -98,12 +181,15 @@ function AdminContent() {
       const profile = await pRes.json();
       setUser(profile);
 
-      const [cRes, wRes] = await Promise.all([
+      const [cRes, wRes, sRes] = await Promise.all([
         fetch('/api/admin/channels'),
-        fetch('/api/admin/workers')
+        fetch('/api/admin/workers'),
+        fetch('/api/admin/sources')
       ]);
       setChannels(await cRes.json());
       setWorkers(await wRes.json());
+      const sData = await sRes.json();
+      setSources(Array.isArray(sData) ? sData : []);
 
       if (profile.role === 'main') {
         const uRes = await fetch('/api/admin/users');
@@ -153,10 +239,51 @@ function AdminContent() {
   useEffect(() => {
     setShowAddChannel(false);
     setShowAddWorker(false);
+    setShowAddSource(false);
     setShowAddAdmin(false);
     setActiveChannel(null);
     setEditChannel(null);
+    setEditWorker(null);
+    setEditSource(null);
   }, [activeTab]);
+
+  const handleUpdateWorker = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    const formData = new FormData(e.target);
+    try {
+      const res = await fetch(`/api/admin/workers/${editWorker.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: formData.get('name'), whatsapp: formData.get('whatsapp') })
+      });
+      if (res.ok) {
+        toast.success('Worker updated!');
+        setEditWorker(null);
+        loadData();
+      } else toast.error('Failed to update worker.');
+    } catch(err) { console.error(err); toast.error('Error updating worker.'); }
+    finally { setSubmitting(false); }
+  };
+
+  const handleUpdateSource = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    const formData = new FormData(e.target);
+    try {
+      const res = await fetch(`/api/admin/sources/${editSource.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ caption: formData.get('caption'), audio: formData.get('audio'), link: formData.get('link') })
+      });
+      if (res.ok) {
+        toast.success('Source updated!');
+        setEditSource(null);
+        loadData();
+      } else toast.error('Failed to update source.');
+    } catch(err) { console.error(err); toast.error('Error updating source.'); }
+    finally { setSubmitting(false); }
+  };
 
   const handleCreateAdmin = async (e) => {
     e.preventDefault();
@@ -173,15 +300,83 @@ function AdminContent() {
     if (res.ok) { setShowAddAdmin(false); loadData(); e.target.reset(); }
   };
 
-  const handleAddWorker = async (e) => {
+  const handleUpdatePassword = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
-    const res = await fetch('/api/admin/workers', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: formData.get('name'), whatsapp: formData.get('whatsapp') }),
-    });
-    if (res.ok) { setShowAddWorker(false); loadData(); e.target.reset(); }
+    const currentPassword = formData.get('currentPassword');
+    const newPassword = formData.get('newPassword');
+    const confirmPassword = formData.get('confirmPassword');
+
+    if (newPassword !== confirmPassword) {
+      return toast.error('New passwords do not match');
+    }
+
+    setSubmitting(true);
+    try {
+      const res = await fetch('/api/admin/security/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword, newPassword })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        toast.success('Password updated successfully!');
+        e.target.reset();
+      } else {
+        toast.error(data.error || 'Failed to update password');
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('An error occurred');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleAddWorker = async (e) => {
+    e.preventDefault();
+    if (submitting) return;
+    
+    setSubmitting(true);
+    try {
+      const formData = new FormData(e.target);
+      const res = await fetch('/api/admin/workers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: formData.get('name'), whatsapp: formData.get('whatsapp') }),
+      });
+      if (res.ok) { 
+        setShowAddWorker(false); 
+        await loadData(); 
+        e.target.reset(); 
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleAddSource = async (e) => {
+    e.preventDefault();
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      const formData = new FormData(e.target);
+      const res = await fetch('/api/admin/sources', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ caption: formData.get('caption'), audio: formData.get('audio'), link: formData.get('link') }),
+      });
+      if (res.ok) { 
+        setShowAddSource(false); 
+        await loadData(); 
+        e.target.reset(); 
+      }
+    } catch (err) { console.error(err); } finally { setSubmitting(false); }
   };
 
   const handleAddChannel = async (e) => {
@@ -223,11 +418,12 @@ function AdminContent() {
     const total_price = parseFloat(batchRev) || 0;
     const cost_per = parseFloat(batchCost) || 0;
     
-    if (selectedIds.length === 0) return alert('No channels picked!');
+    if (selectedIds.length === 0) return toast.error('No channels picked!');
     const per_item_price = (total_price / selectedIds.length).toFixed(2);
     const per_item_cost = (cost_per / selectedIds.length).toFixed(2);
 
-    if (!confirm(`Are you sure? This will assign $${per_item_price} revenue and $${per_item_cost} cost to ${selectedIds.length} accounts.`)) return;
+    const confirmed = await showConfirm(`Are you sure? This will assign $${per_item_price} revenue and $${per_item_cost} cost to ${selectedIds.length} accounts.`);
+    if (!confirmed) return;
 
     setLoading(true);
     try {
@@ -247,8 +443,8 @@ function AdminContent() {
       setBatchRev('');
       setBatchCost('');
       loadData();
-      alert(`Unit sold successfully! (${selectedIds.length} items)`);
-    } catch(err) { console.error(err); }
+      toast.success(`Unit sold successfully! (${selectedIds.length} items)`);
+    } catch(err) { console.error(err); toast.error('Failed to execute sale'); }
     finally { setLoading(false); }
   };
 
@@ -304,6 +500,11 @@ function AdminContent() {
            {activeTab === 'channels' && (
              <button onClick={() => setShowAddChannel(!showAddChannel)} className="btn btn-sm btn-approve" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                {showAddChannel ? <><HiX /> Cancel</> : <><HiPlus /> Channel</>}
+             </button>
+           )}
+           {activeTab === 'sources' && (
+             <button onClick={() => setShowAddSource(!showAddSource)} className="btn btn-sm btn-approve" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+               {showAddSource ? <><HiX /> Cancel</> : <><HiPlus /> Source</>}
              </button>
            )}
         </div>
@@ -405,7 +606,28 @@ function AdminContent() {
            <form onSubmit={handleAddWorker} style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-end' }}>
               <div className="compact-form-group" style={{ flex: 1, marginBottom: 0 }}><label>Spec Name</label><input type="text" name="name" className="compact-form-control" required /></div>
               <div className="compact-form-group" style={{ flex: 1, marginBottom: 0 }}><label>WhatsApp</label><input type="text" name="whatsapp" className="compact-form-control" /></div>
-              <button type="submit" className="btn btn-sm btn-approve" style={{ height: '31px' }}>Register Specialist</button>
+              <button type="submit" disabled={submitting} className="btn btn-sm btn-approve" style={{ height: '31px' }}>
+                {submitting ? 'Registering...' : 'Register Specialist'}
+              </button>
+           </form>
+        </div>
+      )}
+
+      {showAddSource && (
+        <div style={{ padding: '0.75rem', border: '1px solid #e2e8f0', borderRadius: '4px', marginBottom: '1rem', background: '#f8fafc' }}>
+           <form onSubmit={handleAddSource} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.75rem', alignItems: 'flex-end' }}>
+              <div className="compact-form-group" style={{ marginBottom: 0 }}><label>Title</label><input type="text" name="caption" className="compact-form-control" required /></div>
+              <div className="compact-form-group" style={{ marginBottom: 0 }}>
+                 <label>Type</label>
+                 <select name="audio" className="compact-form-control" required>
+                    <option value="audio">Audio</option>
+                    <option value="caption">Caption</option>
+                 </select>
+              </div>
+              <div className="compact-form-group" style={{ marginBottom: 0 }}><label>Link or Caption</label><input type="text" name="link" className="compact-form-control" required /></div>
+              <button type="submit" disabled={submitting} className="btn btn-sm btn-approve" style={{ height: '31px' }}>
+                {submitting ? '...' : 'Add'}
+              </button>
            </form>
         </div>
       )}
@@ -413,8 +635,15 @@ function AdminContent() {
       {showAddChannel && (
         <div style={{ padding: '0.75rem', border: '1px solid #e2e8f0', borderRadius: '4px', marginBottom: '1rem', background: '#f8fafc' }}>
            <form onSubmit={handleAddChannel} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '0.75rem', alignItems: 'flex-end' }}>
-              <div className="compact-form-group" style={{ marginBottom: 0 }}><label>ID Name</label><input type="text" name="channel_name" className="compact-form-control" required /></div>
-              <div className="compact-form-group" style={{ marginBottom: 0 }}><label>Link</label><input type="url" name="channel_link" className="compact-form-control" required /></div>
+              <div className="compact-form-group" style={{ marginBottom: 0 }}>
+                <label>ID Name</label>
+                <input type="text" name="channel_name" className="compact-form-control" required value={newChannelName} onChange={e => setNewChannelName(e.target.value)} />
+              </div>
+              <div className="compact-form-group" style={{ marginBottom: 0 }}>
+                <label>Link {ytLoading && <span style={{fontSize:'10px', color:'#6366f1'}}>(Fetching...)</span>}</label>
+                <input type="url" name="channel_link" className="compact-form-control" required onBlur={handleLinkBlur} />
+                {ytSubs && <div style={{ fontSize: '10px', color: '#059669', marginTop: '2px', fontWeight: 'bold' }}>Subs: {ytSubs}</div>}
+              </div>
               <div className="compact-form-group" style={{ marginBottom: 0 }}>
                 <label>Specialist</label>
                 <select name="worker_id" className="compact-form-control" required>
@@ -427,6 +656,57 @@ function AdminContent() {
               <div className="compact-form-group" style={{ marginBottom: 0 }}><label>Pass</label><input type="text" name="password" className="compact-form-control" placeholder="Optional" /></div>
               <button type="submit" className="btn btn-sm btn-approve" style={{ height: '31px' }}>List Channel</button>
            </form>
+        </div>
+      )}
+
+      {activeTab === 'security' && (
+        <div style={{ maxWidth: '500px' }}>
+          <div className="dashboard-card">
+            <div className="dashboard-card-title">Account Security</div>
+            <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '1.5rem' }}> Manage your administrative credentials and account password. </p>
+            <form onSubmit={handleUpdatePassword} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div className="compact-form-group">
+                <label>Current Password</label>
+                <input 
+                  type="password" 
+                  name="currentPassword" 
+                  required 
+                  className="compact-form-control" 
+                  placeholder="••••••••"
+                />
+              </div>
+              
+              <div className="compact-form-group">
+                <label>New Password</label>
+                <input 
+                  type="password" 
+                  name="newPassword" 
+                  required 
+                  className="compact-form-control" 
+                  placeholder="••••••••"
+                />
+              </div>
+              <div className="compact-form-group">
+                <label>Confirm New Password</label>
+                <input 
+                  type="password" 
+                  name="confirmPassword" 
+                  required 
+                  className="compact-form-control" 
+                  placeholder="••••••••"
+                />
+              </div>
+
+              <button 
+                type="submit" 
+                disabled={submitting} 
+                className="btn btn-sm btn-approve" 
+                style={{ marginTop: '0.5rem', height: '31px' }}
+              >
+                {submitting ? 'Updating...' : 'Change Password'}
+              </button>
+            </form>
+          </div>
         </div>
       )}
 
@@ -458,7 +738,7 @@ function AdminContent() {
               onChange={(e) => setFilters({...filters, workerId: e.target.value})}
             >
               <option value="all">Any Specialist</option>
-              {workers.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+              {activeWorkers.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
             </select>
           </div>
           {activeTab !== 'sales' && (
@@ -489,8 +769,23 @@ function AdminContent() {
               </div>
             </>
           )}
+          <div style={{ flex: '1', minWidth: '130px' }}>
+            <select 
+              className="compact-form-control"
+              value={filters.sortBy || 'default'}
+              onChange={(e) => setFilters({...filters, sortBy: e.target.value})}
+            >
+              <option value="default">Default Sort</option>
+              <option value="subs_desc">Subs: High to Low</option>
+              <option value="subs_asc">Subs: Low to High</option>
+              <option value="name_asc">Name: A-Z</option>
+              <option value="name_desc">Name: Z-A</option>
+              <option value="date_desc">Newest First</option>
+              <option value="date_asc">Oldest First</option>
+            </select>
+          </div>
           <button 
-            onClick={() => setFilters({ search: '', workerId: 'all', kpiStatus: 'all', marketStatus: 'all' })}
+            onClick={() => setFilters({ search: '', workerId: 'all', kpiStatus: 'all', marketStatus: 'all', sortBy: 'default', sourceType: 'all' })}
             className="btn btn-sm btn-outline"
             style={{ padding: '0.5rem 0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
           >
@@ -499,8 +794,38 @@ function AdminContent() {
         </div>
       )}
 
-      <div className="compact-table-wrapper">
-        {activeTab !== 'sell' && (
+      {activeTab === 'sources' && (
+        <div style={{ 
+          display: 'flex', gap: '0.6rem', marginBottom: '1rem', 
+          flexWrap: 'wrap', alignItems: 'center', background: '#fff', 
+          padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--adm-border)'
+        }}>
+          <div style={{ flex: '2', minWidth: '200px' }}>
+            <input 
+              type="text" placeholder="Search title or details..." className="compact-form-control"
+              value={filters.search} onChange={(e) => setFilters({...filters, search: e.target.value})}
+            />
+          </div>
+          <div style={{ flex: '1', minWidth: '130px' }}>
+            <select className="compact-form-control" value={filters.sourceType} onChange={(e) => setFilters({...filters, sourceType: e.target.value})}>
+              <option value="all">All Types</option>
+              <option value="audio">Audio</option>
+              <option value="caption">Caption</option>
+            </select>
+          </div>
+          <button 
+            onClick={() => setFilters({ search: '', workerId: 'all', kpiStatus: 'all', marketStatus: 'all', sortBy: 'default', sourceType: 'all' })}
+            className="btn btn-sm btn-outline"
+            style={{ padding: '0.5rem 0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+          >
+            <HiRefresh /> Reset
+          </button>
+        </div>
+      )}
+
+      {['monitoring', 'channels', 'sales', 'workers', 'sources', 'admins', 'sell'].includes(activeTab) && (
+        <div className="compact-table-wrapper">
+          {activeTab !== 'sell' && (
           <div className="table-responsive">
             <table className="compact-table">
               {activeTab === 'monitoring' && (
@@ -524,7 +849,7 @@ function AdminContent() {
                           <td data-label="SL.">{idx + 1}</td>
                           <td data-label="Channel">
                             <div className="cell-content">
-                              <div style={{ fontWeight: 600 }}>{c.channel_name}</div>
+                              <div style={{ fontWeight: 600 }}><a href={c.channel_link} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>{c.channel_name}</a></div>
                               <a href={c.channel_link} target="_blank" style={{ fontSize: '10px', color: '#1e293b', textDecoration: 'underline' }}>Verify</a>
                             </div>
                           </td>
@@ -593,7 +918,7 @@ function AdminContent() {
                       <Fragment key={c.id}>
                         <tr key={c.id}>
                           <td data-label="SL.">{idx + 1}</td>
-                          <td data-label="Channel"><div style={{ fontWeight: 600 }}>{c.channel_name}</div></td>
+                          <td data-label="Channel"><div style={{ fontWeight: 600 }}><a href={c.channel_link} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>{c.channel_name}</a></div></td>
                           <td data-label="Specialist"><div>{c.worker_name || 'PENDING'}</div></td>
                           {user.role === 'main' && <td data-label="Added By"><div>{c.creator_name || '---'}</div></td>}
                           <td data-label="Subs"><div>{c.sub_count || 0}</div></td>
@@ -608,7 +933,7 @@ function AdminContent() {
                              <div className="manage-actions">
                                 <button onClick={() => toggleDrawer(c.id)} className={`btn btn-sm ${expandedIds.includes(c.id) ? 'btn-approve' : 'btn-outline'}`} title="Credentials"><HiKey /></button>
                                 <button onClick={() => setEditChannel(c)} className="btn btn-sm btn-outline" title="Edit"><HiPencilAlt /></button>
-                                <button onClick={async () => { if(confirm('Delete?')) { await fetch(`/api/admin/channels/${c.id}`, {method: 'DELETE'}); loadData(); } }} className="btn btn-sm btn-reject" title="Delete"><HiOutlineTrash /></button>
+                                <button onClick={async () => { if(await showConfirm('Delete?')) { await fetch(`/api/admin/channels/${c.id}`, {method: 'DELETE'}); loadData(); } }} className="btn btn-sm btn-reject" title="Delete"><HiOutlineTrash /></button>
                              </div>
                           </td>
                         </tr>
@@ -648,7 +973,7 @@ function AdminContent() {
                     {soldChannels.map((c, idx) => (
                       <tr key={c.id}>
                         <td data-label="SL.">{idx + 1}</td>
-                        <td data-label="Channel"><div>{c.channel_name}</div></td>
+                        <td data-label="Channel"><div><a href={c.channel_link} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>{c.channel_name}</a></div></td>
                         <td data-label="Price"><div style={{ color: '#059669' }}>{c.sell_price}</div></td>
                         <td data-label="Cost"><div style={{ color: '#dc2626' }}>{c.worker_cost}</div></td>
                         <td data-label="Profit"><div style={{ fontWeight: 700 }}>{(c.sell_price - c.worker_cost).toFixed(2)}</div></td>
@@ -685,10 +1010,58 @@ function AdminContent() {
                         <td data-label="WhatsApp"><div>{w.whatsapp || '---'}</div></td>
                         <td data-label="Added By"><div>{w.creator_name || '---'}</div></td>
                         <td style={{ textAlign: 'right' }}>
-                           <button onClick={async () => { if(confirm('Remove?')) { await fetch(`/api/admin/workers/${w.id}`, {method: 'DELETE'}); loadData(); } }} className="btn btn-sm btn-reject" title="Remove"><HiOutlineTrash /></button>
+                           <div className="manage-actions" style={{ justifyContent: 'flex-end' }}>
+                               <button onClick={() => setEditWorker(w)} className="btn btn-sm btn-outline" title="Edit"><HiPencilAlt /></button>
+                               <button onClick={async () => { if(await showConfirm('Remove?')) { await fetch(`/api/admin/workers/${w.id}`, {method: 'DELETE'}); loadData(); } }} className="btn btn-sm btn-reject" title="Remove"><HiOutlineTrash /></button>
+                           </div>
                         </td>
                       </tr>
                     ))}
+                  </tbody>
+                </>
+              )}
+
+              {activeTab === 'sources' && (
+                <>
+                  <thead>
+                    <tr><th>SL.</th><th>Title</th><th>Type</th><th>Link / Details</th><th style={{ textAlign: 'right' }}>Action</th></tr>
+                  </thead>
+                  <tbody>
+                    {filteredSources?.map((s, idx) => (
+                      <tr key={s.id}>
+                        <td data-label="SL.">{idx + 1}</td>
+                        <td data-label="Title"><div style={{ fontWeight: 600 }}>{s.caption}</div></td>
+                        <td data-label="Type">
+                          <div style={{ fontSize: '10px', fontWeight: 600, color: s.audio === 'audio' ? '#8b5cf6' : '#10b981', textTransform: 'uppercase' }}>
+                            {s.audio === 'audio' ? 'Audio' : s.audio === 'caption' ? 'Caption' : '---'}
+                          </div>
+                        </td>
+                        <td data-label="Link / Details">
+                          <div>
+                            {s.audio === 'audio' ? (s.link ? <a href={s.link} target="_blank" style={{ color: '#6366f1', textDecoration: 'underline', fontWeight: 600 }}>Visit Link</a> : '---') : (s.link || '---')}
+                          </div>
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
+                           <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end' }}>
+                               <button 
+                                 onClick={() => {
+                                   navigator.clipboard.writeText(s.link || '');
+                                   toast.success('Copied to clipboard!');
+                                 }} 
+                                 className="btn btn-sm btn-outline" 
+                                 title="Copy Link/Details"
+                               >
+                                 <HiOutlineClipboardCopy />
+                               </button>
+                               <button onClick={() => setEditSource(s)} className="btn btn-sm btn-outline" title="Edit"><HiPencilAlt /></button>
+                               <button onClick={async () => { if(await showConfirm('Remove?')) { await fetch(`/api/admin/sources/${s.id}`, {method: 'DELETE'}); loadData(); } }} className="btn btn-sm btn-reject" title="Remove"><HiOutlineTrash /></button>
+                           </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {(!filteredSources || filteredSources.length === 0) && (
+                      <tr><td colSpan="5" style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>No sources found.</td></tr>
+                    )}
                   </tbody>
                 </>
               )}
@@ -707,7 +1080,7 @@ function AdminContent() {
                         <td style={{ textAlign: 'right' }}>
                             <div className="manage-actions">
                                {adm.id !== user.userId && (
-                                 <button onClick={async () => { if(confirm('Delete?')) { await fetch(`/api/admin/users?id=${adm.id}`, {method: 'DELETE'}); loadData(); } }} className="btn btn-sm btn-reject" title="Delete"><HiOutlineTrash /></button>
+                                 <button onClick={async () => { if(await showConfirm('Delete?')) { await fetch(`/api/admin/users?id=${adm.id}`, {method: 'DELETE'}); loadData(); } }} className="btn btn-sm btn-reject" title="Delete"><HiOutlineTrash /></button>
                                )}
                             </div>
                         </td>
@@ -737,7 +1110,7 @@ function AdminContent() {
                   onChange={(e) => { setSellWorkerId(e.target.value); setSelectedIds([]); }}
                 >
                   <option value="">Choose Worker...</option>
-                  {workers.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+                  {activeWorkers.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
                 </select>
               </div>
               
@@ -828,6 +1201,7 @@ function AdminContent() {
           </div>
         )}
       </div>
+      )}
 
       {activeChannel && (
          <div className="modal-overlay">
@@ -847,6 +1221,45 @@ function AdminContent() {
                   <div style={{ display: 'flex', gap: '0.4rem', marginTop: '1.5rem' }}>
                     <button type="button" onClick={() => setActiveChannel(null)} className="btn btn-sm btn-outline" style={{ flex: 1 }}>Cancel</button>
                     <button type="submit" className="btn btn-sm btn-approve" style={{ flex: 1 }}>Save</button>
+                  </div>
+               </form>
+            </div>
+         </div>
+      )}
+
+      {editWorker && (
+         <div className="modal-overlay">
+            <div className="modal-content">
+               <div style={{ marginBottom: '1rem', fontWeight: 700 }}>Edit Specialist</div>
+               <form onSubmit={handleUpdateWorker}>
+                  <div className="compact-form-group"><label>Spec Name</label><input type="text" name="name" className="compact-form-control" defaultValue={editWorker.name} required /></div>
+                  <div className="compact-form-group"><label>WhatsApp</label><input type="text" name="whatsapp" className="compact-form-control" defaultValue={editWorker.whatsapp} /></div>
+                  <div style={{ display: 'flex', gap: '0.4rem', marginTop: '1.5rem' }}>
+                    <button type="button" onClick={() => setEditWorker(null)} className="btn btn-sm btn-outline" style={{ flex: 1 }}>Cancel</button>
+                    <button type="submit" disabled={submitting} className="btn btn-sm btn-approve" style={{ flex: 1 }}>{submitting ? '...' : 'Save'}</button>
+                  </div>
+               </form>
+            </div>
+         </div>
+      )}
+
+      {editSource && (
+         <div className="modal-overlay">
+            <div className="modal-content">
+               <div style={{ marginBottom: '1rem', fontWeight: 700 }}>Edit Source</div>
+               <form onSubmit={handleUpdateSource}>
+                  <div className="compact-form-group"><label>Title</label><input type="text" name="caption" className="compact-form-control" defaultValue={editSource.caption} required /></div>
+                  <div className="compact-form-group">
+                    <label>Type</label>
+                    <select name="audio" className="compact-form-control" defaultValue={editSource.audio} required>
+                       <option value="audio">Audio</option>
+                       <option value="caption">Caption</option>
+                    </select>
+                  </div>
+                  <div className="compact-form-group"><label>Link or Caption Detail</label><input type="text" name="link" className="compact-form-control" defaultValue={editSource.link} required /></div>
+                  <div style={{ display: 'flex', gap: '0.4rem', marginTop: '1.5rem' }}>
+                    <button type="button" onClick={() => setEditSource(null)} className="btn btn-sm btn-outline" style={{ flex: 1 }}>Cancel</button>
+                    <button type="submit" disabled={submitting} className="btn btn-sm btn-approve" style={{ flex: 1 }}>{submitting ? '...' : 'Save'}</button>
                   </div>
                </form>
             </div>

@@ -5,12 +5,14 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import { HiMenuAlt3, HiX } from 'react-icons/hi';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
+import { useUI } from '@/components/UIContext';
 
 export default function ConditionalLayout({ children }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [user, setUser] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { showConfirm } = useUI();
   const isAdmin = pathname.startsWith('/admin');
 
   useEffect(() => {
@@ -43,7 +45,7 @@ export default function ConditionalLayout({ children }) {
       </div>
     );
 
-    const currentTab = searchParams.get('tab') || 'monitoring';
+    const currentTab = searchParams.get('tab') || 'dashboard';
 
     return (
       <div className={`admin-layout ${isSidebarOpen ? 'sidebar-expanded' : ''}`}>
@@ -78,6 +80,9 @@ export default function ConditionalLayout({ children }) {
              <Link href="/admin?tab=workers" className={`sidebar-link ${currentTab === 'workers' ? 'active' : ''}`}>
                Specialists
              </Link>
+             <Link href="/admin?tab=sources" className={`sidebar-link ${currentTab === 'sources' ? 'active' : ''}`}>
+               Sources
+             </Link>
              
              {user.role === 'main' && (
                <>
@@ -93,6 +98,9 @@ export default function ConditionalLayout({ children }) {
                  </Link>
                </>
              )}
+             <Link href="/admin?tab=security" className={`sidebar-link ${currentTab === 'security' ? 'active' : ''}`}>
+               Security
+             </Link>
           </nav>
           
           <div style={{ marginTop: 'auto' }}>
@@ -102,7 +110,7 @@ export default function ConditionalLayout({ children }) {
              
              <button 
                onClick={async () => {
-                  if (confirm('Logout?')) {
+                  if (await showConfirm('Logout?')) {
                     await fetch('/api/admin/logout', { method: 'POST' });
                     window.location.href = '/admin/login';
                   }

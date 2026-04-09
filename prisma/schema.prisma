@@ -81,3 +81,11 @@ enum daily_updates_status {
   flop
   normal
 }
+
+model sources {
+  id         Int       @id @default(autoincrement())
+  caption    String?   @db.Text
+  audio      String?   @db.Text
+  link       String?   @db.Text
+  created_at DateTime? @default(now()) @db.Timestamp(0)
+}
