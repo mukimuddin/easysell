@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import pool from '@/lib/db';
+import CopyButton from '@/components/CopyButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,20 +40,22 @@ export default async function Home(props) {
           </div>
         ) : (
           channels.map((channel, index) => (
-            <a 
-              key={channel.id} 
-              href={channel.channel_link} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="minimal-item"
-            >
-              <div className="item-serial">
-                {offset + index + 1}.
-              </div>
-              <div className="item-name">
-                {channel.channel_name}
-              </div>
-            </a>
+            <div key={channel.id} className="minimal-item-container">
+              <a 
+                href={channel.channel_link} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="minimal-item"
+              >
+                <div className="item-serial">
+                  {offset + index + 1}.
+                </div>
+                <div className="item-name">
+                  {channel.channel_name}
+                </div>
+              </a>
+              <CopyButton link={channel.channel_link} />
+            </div>
           ))
         )}
       </div>

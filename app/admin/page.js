@@ -929,7 +929,6 @@ function AdminContent() {
                           <td data-label="Channel">
                             <div className="cell-content">
                               <div style={{ fontWeight: 600 }}><a href={c.channel_link} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>{c.channel_name}</a></div>
-                              <a href={c.channel_link} target="_blank" style={{ fontSize: '10px', color: '#1e293b', textDecoration: 'underline' }}>Verify</a>
                             </div>
                           </td>
                           <td data-label="Specialist"><div>{c.worker_name || 'PENDING'}</div></td>
@@ -954,6 +953,16 @@ function AdminContent() {
                           </td>
                           <td style={{ textAlign: 'right' }}>
                              <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end' }}>
+                                <button 
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(c.channel_link || '');
+                                    toast.success('Link copied!');
+                                  }} 
+                                  className="btn btn-sm btn-outline" 
+                                  title="Copy Link"
+                                >
+                                  <HiOutlineClipboardCopy />
+                                </button>
                                 <button onClick={() => toggleDrawer(c.id)} className={`btn btn-sm ${expandedIds.includes(c.id) ? 'btn-approve' : 'btn-outline'}`} title="Credentials"><HiKey /></button>
                                 <button onClick={() => setActiveChannel(c)} className="btn btn-sm btn-outline" title="Update KPI"><HiChartBar /></button>
                              </div>
@@ -1010,6 +1019,16 @@ function AdminContent() {
                           </td>
                           <td style={{ textAlign: 'right' }}>
                              <div className="manage-actions">
+                                <button 
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(c.channel_link || '');
+                                    toast.success('Link copied!');
+                                  }} 
+                                  className="btn btn-sm btn-outline" 
+                                  title="Copy Link"
+                                >
+                                  <HiOutlineClipboardCopy />
+                                </button>
                                 <button onClick={() => toggleDrawer(c.id)} className={`btn btn-sm ${expandedIds.includes(c.id) ? 'btn-approve' : 'btn-outline'}`} title="Credentials"><HiKey /></button>
                                 <button onClick={() => setEditChannel(c)} className="btn btn-sm btn-outline" title="Edit"><HiPencilAlt /></button>
                                 <button onClick={async () => { if(await showConfirm('Delete?')) { await fetch(`/api/admin/channels/${c.id}`, {method: 'DELETE'}); loadData(); } }} className="btn btn-sm btn-reject" title="Delete"><HiOutlineTrash /></button>
