@@ -18,7 +18,8 @@ export async function GET() {
     `;
     const params = [];
 
-    if (session.role === 'sub') {
+    // Employee can only see workers they created
+    if (session.role === 'employee') {
       query += ` WHERE w.created_by = ?`;
       params.push(session.userId);
     }

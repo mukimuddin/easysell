@@ -6,7 +6,7 @@ import { cookies } from 'next/headers';
 export async function DELETE(request, { params }) {
   const token = (await cookies()).get('adminToken')?.value;
   const session = await verifySession(token);
-  if (!session || session.role !== 'main') {
+  if (!session || session.role !== 'admin') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -24,7 +24,7 @@ export async function PATCH(request, { params }) {
   const { id } = await params;
   const token = (await cookies()).get('adminToken')?.value;
   const session = await verifySession(token);
-  if (!session || session.role !== 'main') {
+  if (!session || session.role !== 'admin') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

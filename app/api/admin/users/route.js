@@ -8,7 +8,7 @@ export async function GET() {
   const token = (await cookies()).get('adminToken')?.value;
   const session = await verifySession(token);
   
-  if (!session || session.role !== 'main') {
+  if (!session || session.role !== 'admin') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -25,7 +25,7 @@ export async function POST(request) {
   const token = (await cookies()).get('adminToken')?.value;
   const session = await verifySession(token);
   
-  if (!session || session.role !== 'main') {
+  if (!session || session.role !== 'admin') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -62,7 +62,7 @@ export async function DELETE(request) {
   const token = (await cookies()).get('adminToken')?.value;
   const session = await verifySession(token);
   
-  if (!session || session.role !== 'main') {
+  if (!session || session.role !== 'admin') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -74,6 +74,10 @@ export async function DELETE(request) {
     if (parseInt(id) === session.userId) {
       return NextResponse.json({ error: 'Cannot delete yourself' }, { status: 400 });
     }
+
+    // Orphan their data so a new user with reused ID doesn't inherit it
+    await pool.execute('UPDATE channels SET created_by = NULL WHERE created_by = ?', [id]);
+    await pool.execute('UPDATE workers SET created_by = NULL WHERE created_by = ?', [id]);
 
     await pool.execute('DELETE FROM admin_users WHERE id = ?', [id]);
     return NextResponse.json({ success: true });

@@ -23,9 +23,10 @@ export async function GET() {
       ) u ON c.id = u.channel_id
     `;
 
-    
     const params = [];
-    if (session.role === 'sub') {
+
+    // Employee can only see channels they created
+    if (session.role === 'employee') {
       query += ` WHERE c.created_by = ?`;
       params.push(session.userId);
     }
@@ -54,12 +55,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Name and Link are required' }, { status: 400 });
     }
 
-    if (session.role === 'sub' && worker_id) {
-       const [worker] = await pool.query('SELECT created_by FROM workers WHERE id = ?', [worker_id]);
-       if (worker.length === 0 || worker[0].created_by !== session.userId) {
-         return NextResponse.json({ error: 'Forbidden: Specialist not found or not owned' }, { status: 403 });
-       }
-    }
+
 
     const [result] = await pool.execute(
       'INSERT INTO channels (channel_name, channel_link, whatsapp, worker_id, open_date, sell_price, worker_cost, created_by, gmail, password) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',

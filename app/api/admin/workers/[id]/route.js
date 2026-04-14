@@ -12,11 +12,7 @@ export async function DELETE(request, context) {
   }
 
   try {
-    if (session.role === 'sub') {
-      const [rows] = await pool.query('SELECT created_by FROM workers WHERE id = ?', [id]);
-      if (rows.length === 0) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-      if (rows[0].created_by !== session.userId) return NextResponse.json({ error: 'Unauthorized delete' }, { status: 403 });
-    }
+
 
     await pool.execute('DELETE FROM workers WHERE id = ?', [id]);
     return NextResponse.json({ success: true });
@@ -36,11 +32,7 @@ export async function PATCH(request, context) {
   
   try {
     const { name, whatsapp } = await request.json();
-    if (session.role === 'sub') {
-      const [rows] = await pool.query('SELECT created_by FROM workers WHERE id = ?', [id]);
-      if (rows.length === 0) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-      if (rows[0].created_by !== session.userId) return NextResponse.json({ error: 'Unauthorized edit' }, { status: 403 });
-    }
+
 
     let query = 'UPDATE workers SET name = ?';
     let params = [name];

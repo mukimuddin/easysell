@@ -8,11 +8,36 @@ datasource db {
 }
 
 model admin_users {
-  id       Int               @id @default(autoincrement())
-  username String?           @db.VarChar(50)
-  password String?           @db.VarChar(255)
-  role     admin_users_role? @default(main)
-  workers  workers[]
+  id               Int               @id @default(autoincrement())
+  username         String?           @db.VarChar(50)
+  password         String?           @db.VarChar(255)
+  role             admin_users_role? @default(employee)
+  workers          workers[]
+  employee_profile employee_details?
+}
+
+model employee_details {
+  id                         Int         @id @default(autoincrement())
+  admin_id                   Int         @unique
+  full_name                  String?     @db.VarChar(100)
+  father_name                String?     @db.VarChar(100)
+  mother_name                String?     @db.VarChar(100)
+  phone                      String?     @db.VarChar(20)
+  email                      String?     @db.VarChar(100)
+  present_address            String?     @db.Text
+  permanent_address          String?     @db.Text
+  dob                        DateTime?   @db.Date
+  nid_no                     String?     @db.VarChar(50)
+  joining_date               DateTime?   @db.Date
+  designation                String?     @db.VarChar(50)
+  basic_salary               Decimal?    @db.Decimal(10, 2)
+  contract_target            Int?        @default(0)
+  bank_name                  String?     @db.VarChar(100)
+  account_no                 String?     @db.VarChar(50)
+  emergency_contact_name     String?     @db.VarChar(100)
+  emergency_contact_relation String?     @db.VarChar(50)
+  emergency_contact_phone    String?     @db.VarChar(20)
+  admin_user                 admin_users @relation(fields: [admin_id], references: [id], onDelete: Cascade)
 }
 
 model channels {
@@ -72,8 +97,8 @@ model workers {
 }
 
 enum admin_users_role {
-  main
-  sub
+  admin
+  employee
 }
 
 enum daily_updates_status {

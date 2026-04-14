@@ -10,6 +10,11 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const isEmployee = session.role === 'employee';
+  const ownerFilter = isEmployee ? 'AND c.created_by = ?' : '';
+  const ownerFilterWhere = isEmployee ? 'WHERE c.created_by = ?' : '';
+  const ownerParams = isEmployee ? [session.userId] : [];
+
   try {
     // 1. Summary Stats
     const [summary] = await pool.query(`
@@ -19,11 +24,24 @@ export async function GET() {
         SUM(CASE WHEN is_sold = 0 THEN 1 ELSE 0 END) as active_count,
         SUM(CAST(sell_price AS DECIMAL(10,2))) as total_revenue,
         SUM(CAST(worker_cost AS DECIMAL(10,2))) as total_cost
-      FROM channels
-    `);
+      FROM channels c
+      ${ownerFilterWhere}
+    `, ownerParams);
 
     const stats = summary[0];
-    stats.total_profit = (stats.total_revenue || 0) - (stats.total_cost || 0);
+    
+    // Hide financial data for employees
+    if (isEmployee) {
+      stats.total_revenue = 0;
+      stats.total_cost = 0;
+      stats.total_profit = 0;
+      
+      const [empRows] = await pool.query('SELECT contract_target FROM employee_details WHERE admin_id = ?', [session.userId]);
+      stats.contract_target = empRows[0]?.contract_target || 0;
+    } else {
+      stats.total_profit = (stats.total_revenue || 0) - (stats.total_cost || 0);
+      stats.contract_target = 0;
+    }
 
     // 2. Best Workers (By total sub_count of active channels)
     const [bestWorkers] = await pool.query(`
@@ -33,11 +51,11 @@ export async function GET() {
       LEFT JOIN (
           SELECT * FROM daily_updates WHERE id IN (SELECT MAX(id) FROM daily_updates GROUP BY channel_id)
       ) u ON c.id = u.channel_id
-      WHERE c.is_sold = 0
+      WHERE c.is_sold = 0 ${ownerFilter}
       GROUP BY w.id
       ORDER BY total_subs DESC
       LIMIT 5
-    `);
+    `, ownerParams);
 
     // 3. Best Channels (Top active channels by subs)
     const [bestChannels] = await pool.query(`
@@ -47,10 +65,10 @@ export async function GET() {
       LEFT JOIN (
           SELECT * FROM daily_updates WHERE id IN (SELECT MAX(id) FROM daily_updates GROUP BY channel_id)
       ) u ON c.id = u.channel_id
-      WHERE c.is_sold = 0
+      WHERE c.is_sold = 0 ${ownerFilter}
       ORDER BY u.sub_count DESC
       LIMIT 10
-    `);
+    `, ownerParams);
 
     // 4. Old Channels (Inventory Aging - Oldest active)
     const [oldChannels] = await pool.query(`
@@ -61,10 +79,10 @@ export async function GET() {
       LEFT JOIN (
           SELECT * FROM daily_updates WHERE id IN (SELECT MAX(id) FROM daily_updates GROUP BY channel_id)
       ) u ON c.id = u.channel_id
-      WHERE c.is_sold = 0 AND c.open_date IS NOT NULL
+      WHERE c.is_sold = 0 AND c.open_date IS NOT NULL ${ownerFilter}
       ORDER BY c.open_date ASC
       LIMIT 10
-    `);
+    `, ownerParams);
 
     // 5. Status Distribution (Active only)
     const [statusDist] = await pool.query(`
@@ -73,18 +91,19 @@ export async function GET() {
       LEFT JOIN (
           SELECT * FROM daily_updates WHERE id IN (SELECT MAX(id) FROM daily_updates GROUP BY channel_id)
       ) u ON c.id = u.channel_id
-      WHERE c.is_sold = 0
+      WHERE c.is_sold = 0 ${ownerFilter}
       GROUP BY status
-    `);
+    `, ownerParams);
 
-    // 6. Creation Trend (Last 6 Months)
+    // 6. Creation Trend (Last 12 Months)
     const [creationTrend] = await pool.query(`
-      SELECT DATE_FORMAT(created_at, '%b %Y') as month, COUNT(*) as count
-      FROM channels
-      GROUP BY DATE_FORMAT(created_at, '%Y-%m'), month
-      ORDER BY DATE_FORMAT(created_at, '%Y-%m') ASC
+      SELECT DATE_FORMAT(c.created_at, '%b %Y') as month, COUNT(*) as count
+      FROM channels c
+      ${ownerFilterWhere}
+      GROUP BY DATE_FORMAT(c.created_at, '%Y-%m'), month
+      ORDER BY DATE_FORMAT(c.created_at, '%Y-%m') ASC
       LIMIT 12
-    `);
+    `, ownerParams);
 
     return NextResponse.json({
       summary: stats,

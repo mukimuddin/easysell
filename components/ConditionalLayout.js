@@ -84,7 +84,7 @@ export default function ConditionalLayout({ children }) {
                Sources
              </Link>
              
-             {user.role === 'main' && (
+             {user.role === 'admin' && (
                <>
                  <div className="sidebar-section-title" style={{ padding: '1.25rem 0.75rem 0.4rem', fontSize: '11px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>Admin</div>
                  <Link href="/admin?tab=sell" className={`sidebar-link ${currentTab === 'sell' ? 'active' : ''}`}>
@@ -96,8 +96,15 @@ export default function ConditionalLayout({ children }) {
                  <Link href="/admin?tab=admins" className={`sidebar-link ${currentTab === 'admins' ? 'active' : ''}`}>
                    User Management
                  </Link>
+                 <Link href="/admin?tab=employees" className={`sidebar-link ${currentTab === 'employees' ? 'active' : ''}`}>
+                   Staff Details
+                 </Link>
                </>
              )}
+             <div className="sidebar-section-title" style={{ padding: '1.25rem 0.75rem 0.4rem', fontSize: '11px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>Account</div>
+             <Link href="/admin?tab=profile" className={`sidebar-link ${currentTab === 'profile' ? 'active' : ''}`}>
+               My Profile
+             </Link>
              <Link href="/admin?tab=security" className={`sidebar-link ${currentTab === 'security' ? 'active' : ''}`}>
                Security
              </Link>

@@ -240,16 +240,6 @@ tr { transition: background-color 0.2s ease; }
 tr:hover { background-color: rgba(0,0,0,0.01); }
 
 @media (max-width: 640px) {
-  table, thead, tbody, th, td, tr { display: block; }
-  thead { display: none; }
-  tr { border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 0.75rem; background: #fff; padding: 0.25rem 0.5rem; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
-  td { border: none; position: relative; padding: 0.4rem 0.75rem 0.4rem 40%; text-align: right; display: flex; align-items: center; justify-content: flex-end; font-size: 0.85rem; }
-  td:last-child { min-height: auto; padding-top: 0.5rem; padding-bottom: 0.5rem; padding-left: 0.5rem; justify-content: stretch; text-align: center; }
-  td::before { content: attr(data-label); position: absolute; left: 0.75rem; width: 35%; text-align: left; font-weight: 700; color: var(--muted-foreground); text-transform: uppercase; font-size: 0.65rem; letter-spacing: 0.01em; }
-  td:last-child::before { display: none; }
-  .price-td { font-size: 1rem; color: var(--foreground); }
-  .btn-sm { width: 100%; padding: 0.5rem; margin: 0; display: block; text-align: center; font-size: 0.8rem; }
-  
   .hero { padding: 2.25rem 1rem 1.25rem; }
   .hero h1 { font-size: 1.85rem; margin-bottom: 0.25rem; }
   .hero p { font-size: 0.9rem; margin-bottom: 0.75rem; max-width: 280px; }
@@ -366,7 +356,7 @@ tr:hover { background-color: rgba(0,0,0,0.01); }
   min-height: 100vh;
   background-color: var(--adm-bg);
   color: var(--adm-text);
-  font-size: 13px;
+  font-size: 13px; /* Slightly smaller base */
 }
 
 .admin-mobile-header {
@@ -431,7 +421,7 @@ tr:hover { background-color: rgba(0,0,0,0.01); }
 .admin-main {
   flex: 1;
   margin-left: 220px;
-  padding: 1.5rem;
+  padding: 1rem 1.25rem;
   width: calc(100% - 220px);
 }
 
@@ -478,8 +468,8 @@ tr:hover { background-color: rgba(0,0,0,0.01); }
 
 /* 💠 High-Density Admin Buttons */
 .admin-layout .btn {
-  padding: 0.4rem 0.75rem;
-  font-size: 12px;
+  padding: 0.3rem 0.6rem;
+  font-size: 11.5px;
   border-radius: 4px;
   transform: none !important;
   box-shadow: none !important;
@@ -498,7 +488,21 @@ tr:hover { background-color: rgba(0,0,0,0.01); }
 .admin-layout .btn-approve { background: #10b981; color: #fff; }
 .admin-layout .btn-reject { background: #ef4444; color: #fff; }
 .admin-layout .btn-outline { background: transparent; border: 1px solid var(--adm-border); color: var(--adm-text); }
-.manage-actions { display: flex; gap: 0.5rem; justify-content: flex-end; align-items: center; }
+.manage-actions { display: flex; gap: 0.3rem; justify-content: flex-end; align-items: center; }
+
+.action-link {
+  font-size: 11px;
+  font-weight: 600;
+  text-decoration: none;
+  color: #3b82f6;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+}
+.action-link:hover { text-decoration: underline; }
+.action-link.danger { color: #ef4444; }
+.action-link.secondary { color: #64748b; }
 
 /* Credentials Drawer */
 .credential-drawer {
@@ -543,7 +547,15 @@ tr:hover { background-color: rgba(0,0,0,0.01); }
   overflow: hidden;
 }
 
-.table-responsive { overflow-x: auto; }
+.table-responsive {
+  overflow-x: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.table-responsive::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
 
 .compact-table {
   width: 100%;
@@ -552,23 +564,24 @@ tr:hover { background-color: rgba(0,0,0,0.01); }
 }
 
 .compact-table th {
-  background: #f8fafc;
-  padding: 0.75rem 1rem;
-  font-size: 11px;
+  background: #f1f5f9;
+  padding: 0.4rem 0.75rem;
+  font-size: 10px;
   font-weight: 700;
-  color: var(--adm-text-muted);
+  color: #475569;
   text-transform: uppercase;
   border-bottom: 1px solid var(--adm-border);
+  letter-spacing: 0.025em;
 }
 
 .compact-table td {
-  padding: 0.75rem 1rem;
+  padding: 0.35rem 0.75rem;
   border-bottom: 1px solid #f1f5f9;
   vertical-align: middle;
 }
 
 .compact-table tr:last-child td { border-bottom: none; }
-.compact-table tr:hover td { background: #fdfdfd; }
+.compact-table tr:hover td { background: #f8fafc; }
 
 /* High-Density Mobile List (Minimalist Replacement) */
 @media (max-width: 768px) {
@@ -580,78 +593,8 @@ tr:hover { background-color: rgba(0,0,0,0.01); }
   .sidebar-backdrop { display: block; }
 
   .admin-header { flex-direction: column; align-items: stretch; gap: 0.75rem; border: none; margin-bottom: 1rem; padding: 0; }
-
-  .compact-table, thead, tbody, th, td, tr { display: block; width: 100%; }
-  .compact-table thead { display: none; }
   
-  .compact-table tr {
-    background: #fff;
-    border: 1px solid var(--adm-border);
-    margin-bottom: 0.75rem;
-    border-radius: 8px;
-    padding: 0.5rem;
-    position: relative;
-  }
-  
-  .compact-table td {
-    display: flex;
-    justify-content: space-between;
-    padding: 0.5rem 0.75rem;
-    border-bottom: 1px solid #f1f5f9;
-    font-size: 12px;
-    align-items: flex-start;
-  }
-  
-  .compact-table td:last-child { border-bottom: none; }
-
-  .compact-table td[data-label]::before {
-    content: attr(data-label);
-    font-weight: 700;
-    color: var(--adm-text-muted);
-    font-size: 10px;
-    text-transform: uppercase;
-    min-width: 100px;
-    width: 100px;
-    text-align: left;
-    padding-right: 1rem;
-    flex-shrink: 0;
-  }
-  
-  .compact-table td > div, .compact-table td > .cell-content {
-    flex: 1;
-    text-align: right;
-    word-break: break-all;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    min-width: 0;
-  }
-  
-  .compact-table td > div > div { line-height: 1.2; }
-
-  .compact-table td[data-label="SL."] {
-    background: #f1f5f9;
-    font-weight: 700;
-    width: auto;
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 4px;
-    margin-bottom: 5px;
-    border: none;
-  }
-  .compact-table td[data-label="SL."]::before { display: none; }
-
-  .manage-actions {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 0.5rem;
-    margin-top: 0.5rem;
-    padding: 0.5rem;
-    background: #f8fafc;
-    border-radius: 4px;
-  }
-  
-  .btn-sm { padding: 0.5rem !important; border-radius: 4px; }
+  .compact-table { min-width: 600px; }
 }
 
 /* 📐 Balanced Modals */
@@ -856,25 +799,17 @@ tr:hover { background-color: rgba(0,0,0,0.01); }
   padding-bottom: 0.5rem;
 }
 
-.bento-list { display: flex; flex-direction: column; gap: 1px; background: #f1f5f9; border: 1px solid #f1f5f9; border-radius: 4px; overflow: hidden; }
-.bento-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.5rem 0.75rem;
+.bento-list { display: flex; flex-direction: column; gap: 0.15rem; }
+.bento-item { 
+  display: flex; justify-content: space-between; align-items: center; 
+  padding: 0.35rem 0.6rem; border-radius: 4px; border: 1px solid #f1f5f9;
   background: #fff;
-  transition: background 0.1s;
 }
-.bento-item:hover { background: #fcfcfc; }
-
-.bento-main { flex: 1; min-width: 0; }
-.bento-name { font-weight: 600; font-size: 12px; color: var(--adm-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.bento-sub { font-size: 10px; color: var(--adm-text-muted); }
-.bento-badge {
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--adm-text);
-  padding-left: 0.5rem;
+.bento-name { font-size: 11.5px; font-weight: 700; color: #1e293b; }
+.bento-sub { font-size: 9.5px; color: #64748b; margin-top: 1px; }
+.bento-badge { 
+  background: #f1f5f9; padding: 0.15rem 0.4rem; border-radius: 4px; 
+  font-size: 10px; font-weight: 800; color: #475569;
 }
 
 @media (max-width: 1024px) {
@@ -886,3 +821,10 @@ tr:hover { background-color: rgba(0,0,0,0.01); }
   .stat-card { padding: 0.5rem 0.75rem; }
   .stat-value { font-size: 1.1rem; }
 }
+
+/* ?? Responsive Profile & Details */
+.profile-container { width: 100%; max-width: 900px; margin: 0 auto; padding: 1rem; }
+.profile-card { padding: 1.5rem 1rem; }
+@media (min-width: 768px) { .profile-container { padding: 2rem; } .profile-card { padding: 2.5rem; } }
+.profile-grid { display: grid; grid-template-columns: 1fr; gap: 1.25rem; }
+@media (min-width: 480px) { .profile-grid { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; } }

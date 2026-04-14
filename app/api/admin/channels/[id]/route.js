@@ -66,12 +66,7 @@ export async function PATCH(request, context) {
     }
 
     // Ownership check for Sub-Admins
-    if (session.role === 'sub') {
-      const [owner] = await pool.query('SELECT created_by FROM channels WHERE id = ?', [id]);
-      if (owner.length === 0 || owner[0].created_by !== session.userId) {
-        return NextResponse.json({ error: 'Forbidden: You do not own this channel' }, { status: 403 });
-      }
-    }
+
 
     params.push(id);
     await pool.execute(
@@ -98,13 +93,8 @@ export async function DELETE(request, context) {
   }
 
   try {
-    // Ownership check for Sub-Admins
-    if (session.role === 'sub') {
-      const [owner] = await pool.query('SELECT created_by FROM channels WHERE id = ?', [id]);
-      if (owner.length === 0 || owner[0].created_by !== session.userId) {
-        return NextResponse.json({ error: 'Forbidden: You do not own this channel' }, { status: 403 });
-      }
-    }
+    // Deleted ownership check for sub
+
 
     await pool.execute('DELETE FROM channels WHERE id = ?', [id]);
     return NextResponse.json({ success: true });
