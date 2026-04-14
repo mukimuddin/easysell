@@ -174,6 +174,17 @@ function AdminContent() {
     return workers.filter(w => soldWorkerIds.has(w.id));
   }, [channels, workers]);
 
+  const filteredWorkers = useMemo(() => {
+    let result = workers || [];
+    if (filters.search) {
+      result = result.filter(w => 
+        (w.name || '').toLowerCase().includes(filters.search.toLowerCase()) || 
+        (w.whatsapp || '').toLowerCase().includes(filters.search.toLowerCase())
+      );
+    }
+    return result;
+  }, [workers, filters]);
+
   const filteredSources = useMemo(() => {
     let result = sources || [];
     if (filters.search) {
@@ -585,13 +596,19 @@ function AdminContent() {
                        <div style={{ fontSize: '18px', fontWeight: 800 }}>Channel Acquisition Goal</div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                       <div style={{ fontSize: '24px', fontWeight: 900, color: '#10b981' }}>{((analytics.summary.total_channels / 300) * 100).toFixed(1)}%</div>
-                       <div style={{ fontSize: '10px', color: '#94a3b8' }}>{analytics.summary.total_channels} / 300 Complete</div>
+                       <div style={{ fontSize: '24px', fontWeight: 900, color: '#10b981' }}>
+                          {analytics.summary.contract_target > 0 
+                             ? ((analytics.summary.total_channels / analytics.summary.contract_target) * 100).toFixed(1) 
+                             : '0.0'}%
+                       </div>
+                       <div style={{ fontSize: '10px', color: '#94a3b8' }}>
+                          {analytics.summary.total_channels} / {analytics.summary.contract_target || 300} Complete
+                       </div>
                     </div>
                  </div>
                  <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '10px', overflow: 'hidden' }}>
                     <div style={{ 
-                       width: `${Math.min(100, (analytics.summary.total_channels / 300) * 100)}%`, 
+                       width: `${Math.min(100, analytics.summary.contract_target > 0 ? (analytics.summary.total_channels / analytics.summary.contract_target) * 100 : 0)}%`, 
                        height: '100%', 
                        background: 'linear-gradient(90deg, #10b981 0%, #34d399 100%)',
                        boxShadow: '0 0 10px rgba(16, 185, 129, 0.5)',
@@ -600,7 +617,7 @@ function AdminContent() {
                  </div>
                  <div style={{ marginTop: '0.5rem', fontSize: '11px', color: '#cbd5e1', display: 'flex', justifyContent: 'space-between' }}>
                     <span>Started from zero</span>
-                    <span>Target: 300 Units</span>
+                    <span>Target: {analytics.summary.contract_target || 300} Units</span>
                  </div>
               </div>
            )}
@@ -645,10 +662,10 @@ function AdminContent() {
 
 
            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '0.3rem', marginBottom: '1rem' }}>
-              <div className="dashboard-card" style={{ height: '320px', display: 'flex', flexDirection: 'column', padding: '1.5rem' }}>
+              <div className="dashboard-card" style={{ minHeight: '320px', display: 'flex', flexDirection: 'column', padding: '1.5rem' }}>
                  <div className="dashboard-card-title" style={{ textAlign: 'center', marginBottom: '1rem', width: '100%' }}>Stock Status Flow</div>
-                 <div style={{ flex: 1, width: '100%', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <ResponsiveContainer width="100%" height="100%">
+                 <div style={{ flex: 1, width: '100%', minHeight: '250px', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <ResponsiveContainer width="100%" height={250}>
                        <PieChart>
                           <Pie
                              data={analytics.statusDist || []}
@@ -1202,7 +1219,7 @@ function AdminContent() {
                     <tr><th>SL.</th><th>Specialist</th><th>WhatsApp</th><th>Added By</th><th style={{ textAlign: 'right' }}>Action</th></tr>
                   </thead>
                   <tbody>
-                    {workers.map((w, idx) => (
+                    {filteredWorkers.map((w, idx) => (
                       <tr key={w.id}>
                         <td data-label="SL.">{idx + 1}</td>
                         <td data-label="Specialist"><div style={{ fontWeight: 600, fontSize: '12.5px' }}>{w.name}</div></td>
@@ -1216,6 +1233,9 @@ function AdminContent() {
                         </td>
                       </tr>
                     ))}
+                    {filteredWorkers.length === 0 && (
+                      <tr><td colSpan="5" style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>No matching specialists found. Try adjusting your search.</td></tr>
+                    )}
                   </tbody>
                 </>
               )}
