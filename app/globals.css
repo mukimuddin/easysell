@@ -536,8 +536,9 @@ tr:hover { background-color: rgba(0,0,0,0.01); }
 }
 
 @media (max-width: 768px) {
-  .credential-drawer { gap: 1rem; flex-direction: column; padding: 1rem; }
-  .drawer-row td { display: block !important; border-bottom: none !important; }
+  .credential-drawer { gap: 0.5rem; flex-wrap: nowrap; padding: 0.6rem; overflow-x: auto; }
+  .drawer-item { min-width: 100px; flex: 1; }
+  .drawer-row td { border-bottom: none !important; }
 }
 
 /* Minimal Compact Tables */

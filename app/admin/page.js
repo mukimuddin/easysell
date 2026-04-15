@@ -6,7 +6,7 @@ import {
   HiKey, HiPlus, HiRefresh, HiPencilAlt, 
   HiOutlineTrash, HiChartBar, HiX, HiMenu,
   HiTrendingUp, HiUsers, HiCube, HiCurrencyDollar, HiFire, HiStar, HiOutlineClipboardCopy,
-  HiEye, HiEyeOff
+  HiEye, HiEyeOff, HiCheck
 } from 'react-icons/hi';
 import { getSocket } from '@/lib/socket';
 import { useUI } from '@/components/UIContext';
@@ -26,6 +26,40 @@ const getTimeAgo = (date) => {
   if (hours < 24) return `${hours}h ago`;
   return new Date(date).toLocaleDateString('en-GB');
 };
+
+function CredentialCopyBtn({ gmail, pass }) {
+  const [copied, setCopied] = useState(false);
+  const { toast } = useUI();
+
+  const handleCopy = () => {
+    const text = `${gmail || ''}\n${pass || ''}`;
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    toast.success('Credentials copied!');
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="drawer-item" style={{ minWidth: 'auto', marginLeft: 'auto', alignSelf: 'center' }}>
+      <button 
+        onClick={handleCopy}
+        className={`btn btn-sm ${copied ? 'btn-approve' : 'btn-outline'}`}
+        style={{ 
+          display: 'flex', alignItems: 'center', justifyContent: 'center', 
+          width: '32px', height: '32px', padding: 0,
+          background: copied ? '#10b981' : '#fff', 
+          borderRadius: '6px',
+          transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+          transform: copied ? 'scale(1.15)' : 'scale(1)',
+          color: copied ? '#fff' : '#1e293b'
+        }}
+        title="Copy All Credentials"
+      >
+        {copied ? <HiCheck style={{ fontSize: '16px' }} /> : <HiOutlineClipboardCopy style={{ fontSize: '16px' }} />}
+      </button>
+    </div>
+  );
+}
 
 function AdminContent() {
   const { showConfirm, toast } = useUI();
@@ -602,7 +636,7 @@ function AdminContent() {
                              : '0.0'}%
                        </div>
                        <div style={{ fontSize: '10px', color: '#94a3b8' }}>
-                          {analytics.summary.total_channels} / {analytics.summary.contract_target || 300} Complete
+                          {analytics.summary.total_channels} / {analytics.summary.contract_target || 0} Complete
                        </div>
                     </div>
                  </div>
@@ -617,7 +651,7 @@ function AdminContent() {
                  </div>
                  <div style={{ marginTop: '0.5rem', fontSize: '11px', color: '#cbd5e1', display: 'flex', justifyContent: 'space-between' }}>
                     <span>Started from zero</span>
-                    <span>Target: {analytics.summary.contract_target || 300} Units</span>
+                    <span>Target: {analytics.summary.contract_target || 0} Units</span>
                  </div>
               </div>
            )}
@@ -1104,6 +1138,7 @@ function AdminContent() {
                                   <div className="drawer-item"><strong>Created</strong> <span>{c.open_date ? new Date(c.open_date).toLocaleDateString() : '---'}</span></div>
                                   <div className="drawer-item"><strong>Gmail</strong> <span>{c.gmail || '---'}</span></div>
                                   <div className="drawer-item"><strong>Pass</strong> <span>{c.password || '---'}</span></div>
+                                   {(c.gmail || c.password) && <CredentialCopyBtn gmail={c.gmail} pass={c.password} />}
                                </div>
                             </td>
                           </tr>
@@ -1160,6 +1195,7 @@ function AdminContent() {
                                    <div className="drawer-item"><strong>Date</strong> <span>{c.open_date ? new Date(c.open_date).toLocaleDateString() : '---'}</span></div>
                                    <div className="drawer-item"><strong>Gmail</strong> <span>{c.gmail || '---'}</span></div>
                                    <div className="drawer-item"><strong>Pass</strong> <span>{c.password || '---'}</span></div>
+                                   {(c.gmail || c.password) && <CredentialCopyBtn gmail={c.gmail} pass={c.password} />}
                                 </div>
                              </td>
                           </tr>
