@@ -86,30 +86,6 @@ function AdminContent() {
   const [editWorker, setEditWorker] = useState(null);
   const [editSource, setEditSource] = useState(null);
 
-  // YT Live Check States
-  const [ytLoading, setYtLoading] = useState(false);
-  const [ytSubs, setYtSubs] = useState(null);
-  const [newChannelName, setNewChannelName] = useState('');
-
-  const handleLinkBlur = async (e) => {
-    const url = e.target.value;
-    if (!url || (!url.includes('youtube.com') && !url.includes('youtu.be'))) return;
-    setYtLoading(true);
-    setYtSubs(null);
-    try {
-      const res = await fetch(`/api/admin/yt-info?url=${encodeURIComponent(url)}`);
-      const data = await res.json();
-      if (data.success) {
-        setYtSubs(data.subCountText);
-        if (data.title) setNewChannelName(data.title);
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setYtLoading(false);
-    }
-  };
-
   // Bulk Sell State
   const [sellWorkerId, setSellWorkerId] = useState('');
   const [selectedIds, setSelectedIds] = useState([]);
@@ -883,12 +859,11 @@ function AdminContent() {
            <form onSubmit={handleAddChannel} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '0.5rem', alignItems: 'flex-end' }}>
               <div className="compact-form-group" style={{ marginBottom: 0 }}>
                 <label style={{ fontSize: '10px' }}>ID Name</label>
-                <input type="text" name="channel_name" className="compact-form-control" style={{ fontSize: '11.5px' }} required value={newChannelName} onChange={e => setNewChannelName(e.target.value)} />
+                <input type="text" name="channel_name" className="compact-form-control" style={{ fontSize: '11.5px' }} required />
               </div>
               <div className="compact-form-group" style={{ marginBottom: 0 }}>
-                <label style={{ fontSize: '10px' }}>Link {ytLoading && <span style={{fontSize:'10px', color:'#6366f1'}}>(...)</span>}</label>
-                <input type="url" name="channel_link" className="compact-form-control" style={{ fontSize: '11.5px' }} required onBlur={handleLinkBlur} />
-                {ytSubs && <div style={{ fontSize: '9px', color: '#059669', marginTop: '2px', fontWeight: 'bold' }}>Subs: {ytSubs}</div>}
+                <label style={{ fontSize: '10px' }}>Link</label>
+                <input type="url" name="channel_link" className="compact-form-control" style={{ fontSize: '11.5px' }} required />
               </div>
               <div className="compact-form-group" style={{ marginBottom: 0 }}>
                 <label style={{ fontSize: '10px' }}>Specialist</label>
