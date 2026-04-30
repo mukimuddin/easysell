@@ -14,7 +14,15 @@ export async function DELETE(request, context) {
   try {
 
 
-    await pool.execute('DELETE FROM workers WHERE id = ?', [id]);
+    const isAdmin = session.role === 'admin';
+    const query = isAdmin
+      ? 'DELETE FROM workers WHERE id = ?'
+      : 'DELETE FROM workers WHERE id = ? AND created_by = ?';
+    const params = isAdmin ? [id] : [id, session.userId];
+    const [result] = await pool.execute(query, params);
+    if (result.affectedRows === 0) {
+      return NextResponse.json({ error: 'Not found or forbidden' }, { status: 404 });
+    }
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting worker:', error);
@@ -40,9 +48,16 @@ export async function PATCH(request, context) {
       query += ', whatsapp = ?';
       params.push(whatsapp);
     }
-    query += ' WHERE id = ?';
+    const isAdmin = session.role === 'admin';
+    query += isAdmin ? ' WHERE id = ?' : ' WHERE id = ? AND created_by = ?';
     params.push(id);
-    await pool.execute(query, params);
+    if (!isAdmin) {
+      params.push(session.userId);
+    }
+    const [result] = await pool.execute(query, params);
+    if (result.affectedRows === 0) {
+      return NextResponse.json({ error: 'Not found or forbidden' }, { status: 404 });
+    }
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error updating worker:', error);

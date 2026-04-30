@@ -115,6 +115,6 @@ export async function POST(request) {
     return NextResponse.json({ success: true, affectedRows: result.affectedRows });
   } catch (error) {
     console.error('Error saving employee details:', error);
-    return NextResponse.json({ error: 'Error saving: ' + error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

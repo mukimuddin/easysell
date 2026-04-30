@@ -3,7 +3,12 @@ import pool from '@/lib/db';
 
 export async function GET() {
   try {
-    const [rows] = await pool.query('SELECT * FROM channels WHERE is_selected = 1 ORDER BY created_at DESC');
+    const [rows] = await pool.query(
+      `SELECT id, channel_name, channel_link, open_date, created_at
+       FROM channels
+       WHERE is_selected = 1
+       ORDER BY created_at DESC`
+    );
     return NextResponse.json(rows);
   } catch (error) {
     console.error('Error fetching selected channels:', error);

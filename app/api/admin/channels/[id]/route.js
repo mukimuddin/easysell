@@ -65,14 +65,16 @@ export async function PATCH(request, context) {
       return NextResponse.json({ error: 'No fields to update' }, { status: 400 });
     }
 
-    // Ownership check for Sub-Admins
-
-
     params.push(id);
-    await pool.execute(
-      `UPDATE channels SET ${fields.join(', ')} WHERE id = ?`,
-      params
-    );
+    const isAdmin = session.role === 'admin';
+    const whereClause = isAdmin ? 'id = ?' : 'id = ? AND created_by = ?';
+    if (!isAdmin) {
+      params.push(session.userId);
+    }
+    const [result] = await pool.execute(`UPDATE channels SET ${fields.join(', ')} WHERE ${whereClause}`, params);
+    if (result.affectedRows === 0) {
+      return NextResponse.json({ error: 'Not found or forbidden' }, { status: 404 });
+    }
 
     emitEvent('channel-updated', { id });
 
@@ -93,10 +95,15 @@ export async function DELETE(request, context) {
   }
 
   try {
-    // Deleted ownership check for sub
-
-
-    await pool.execute('DELETE FROM channels WHERE id = ?', [id]);
+    const isAdmin = session.role === 'admin';
+    const query = isAdmin
+      ? 'DELETE FROM channels WHERE id = ?'
+      : 'DELETE FROM channels WHERE id = ? AND created_by = ?';
+    const params = isAdmin ? [id] : [id, session.userId];
+    const [result] = await pool.execute(query, params);
+    if (result.affectedRows === 0) {
+      return NextResponse.json({ error: 'Not found or forbidden' }, { status: 404 });
+    }
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting channel:', error);

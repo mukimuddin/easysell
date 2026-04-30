@@ -18,6 +18,16 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Channel ID is required' }, { status: 400 });
     }
 
+    if (session.role === 'employee') {
+      const [ownedChannel] = await pool.query(
+        'SELECT id FROM channels WHERE id = ? AND created_by = ? LIMIT 1',
+        [channel_id, session.userId]
+      );
+      if (ownedChannel.length === 0) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+    }
+
     const [result] = await pool.execute(
       'INSERT INTO daily_updates (channel_id, shorts_uploaded, shorts_count, sub_count, status) VALUES (?, ?, ?, ?, ?)',
       [channel_id, shorts_uploaded ? 1 : 0, shorts_count || 0, sub_count || 0, status || 'growing']
@@ -45,15 +55,22 @@ export async function GET(request) {
   const channelId = searchParams.get('channel_id');
 
   try {
-    let query = 'SELECT * FROM daily_updates';
+    let query = 'SELECT d.* FROM daily_updates d';
     const params = [];
-    
-    if (channelId) {
-      query += ' WHERE channel_id = ?';
+
+    if (session.role === 'employee') {
+      query += ' INNER JOIN channels c ON d.channel_id = c.id WHERE c.created_by = ?';
+      params.push(session.userId);
+      if (channelId) {
+        query += ' AND d.channel_id = ?';
+        params.push(channelId);
+      }
+    } else if (channelId) {
+      query += ' WHERE d.channel_id = ?';
       params.push(channelId);
     }
-    
-    query += ' ORDER BY update_date DESC LIMIT 30';
+
+    query += ' ORDER BY d.update_date DESC LIMIT 30';
 
     const [rows] = await pool.query(query, params);
     return NextResponse.json(rows);

@@ -6,6 +6,7 @@ import { Server } from 'socket.io';
 const dev = process.env.NODE_ENV !== 'production';
 const hostname = 'localhost';
 const port = 3000;
+const allowedSocketOrigin = process.env.SOCKET_ALLOWED_ORIGIN || (dev ? 'http://localhost:3000' : null);
 const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
 
@@ -17,7 +18,7 @@ app.prepare().then(() => {
 
   const io = new Server(httpServer, {
     cors: {
-      origin: '*', // Adjust for production security if needed
+      origin: allowedSocketOrigin || false,
       methods: ['GET', 'POST'],
     },
   });

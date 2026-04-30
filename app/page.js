@@ -1,93 +1,112 @@
 import Link from 'next/link';
-import pool from '@/lib/db';
-import CopyButton from '@/components/CopyButton';
 
-export const dynamic = 'force-dynamic';
-
-export default async function Home(props) {
-  const searchParams = await props.searchParams;
-  const page = parseInt(searchParams.page) || 1;
-  const limit = 50; // Show more channels in a compact list
-  const offset = (page - 1) * limit;
-
-  let channels = [];
-  let totalPages = 1;
-
-  try {
-    const [countRows] = await pool.query('SELECT COUNT(*) as total FROM channels WHERE is_selected = 1');
-    const totalItems = countRows[0].total;
-    totalPages = Math.ceil(totalItems / limit);
-
-    const [rows] = await pool.query(
-      `SELECT id, channel_name, channel_link FROM channels 
-       WHERE is_selected = 1 
-       ORDER BY created_at DESC 
-       LIMIT ? OFFSET ?`,
-      [limit, offset]
-    );
-
-    channels = rows;
-  } catch (error) {
-    console.error('Failed to fetch channels:', error.message);
-  }
-
+export default function Home() {
   return (
-    <main style={{ padding: '1rem 0' }}>
-      <div className="minimal-list">
-        {channels.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--muted-foreground)' }}>
-            No channels available today.
-          </div>
-        ) : (
-          channels.map((channel, index) => (
-            <div key={channel.id} className="minimal-item-container">
-              <a 
-                href={channel.channel_link} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="minimal-item"
-              >
-                <div className="item-serial">
-                  {offset + index + 1}.
-                </div>
-                <div className="item-name">
-                  {channel.channel_name}
-                </div>
-              </a>
-              <CopyButton link={channel.channel_link} />
-            </div>
-          ))
-        )}
-      </div>
+    <main>
+      <section className="hero">
+        <h1>EasySell</h1>
+        <p>
+          A startup supplying high-quality YouTube channels for brands, agencies,
+          and growth-focused marketing teams.
+        </p>
+      </section>
 
-      {totalPages > 1 && (
-        <div className="pagination" style={{ marginTop: '1rem' }}>
-          <Link 
-            href={`/?page=${page - 1}`} 
-            className={`page-btn ${page === 1 ? 'disabled' : ''}`}
-            aria-disabled={page === 1}
-            style={page === 1 ? { pointerEvents: 'none', opacity: 0.5 } : {}}
-          >
-            &laquo;
-          </Link>
-          
-          <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--muted-foreground)' }}>
-            Page {page} of {totalPages}
-          </span>
+      <section className="common-container" style={{ maxWidth: '860px' }}>
+        <div
+          style={{
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius)',
+            padding: '1.25rem',
+            marginBottom: '1rem',
+            background: 'var(--background)',
+          }}
+        >
+          <h2 className="section-title" style={{ marginBottom: '0.75rem' }}>
+            Company Overview
+          </h2>
+          <p style={{ color: 'var(--muted-foreground)', marginBottom: '0.65rem' }}>
+            EasySell connects a high-volume buyer network with a reliable channel
+            supply pipeline for marketing, branding, and campaign launches.
+          </p>
+          <p style={{ color: 'var(--muted-foreground)' }}>
+            Demand is continuous and growing. Our focus is speed, consistency, and
+            scalable delivery for buyers at every stage.
+          </p>
+        </div>
 
-          <Link 
-            href={`/?page=${page + 1}`} 
-            className={`page-btn ${page === totalPages ? 'disabled' : ''}`}
-            aria-disabled={page === totalPages}
-            style={page === totalPages ? { pointerEvents: 'none', opacity: 0.5 } : {}}
-          >
-            &raquo;
+        <div
+          style={{
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius)',
+            padding: '1.25rem',
+            marginBottom: '1rem',
+            background: 'var(--background)',
+          }}
+        >
+          <h2 className="section-title" style={{ marginBottom: '0.75rem' }}>
+            What We Provide
+          </h2>
+          <ul style={{ color: 'var(--muted-foreground)', paddingLeft: '1rem' }}>
+            <li>High-volume YouTube channel sourcing with consistent quality.</li>
+            <li>Fast onboarding and structured handover workflow.</li>
+            <li>Reliable support for long-term marketing operations.</li>
+          </ul>
+        </div>
+
+        <div
+          style={{
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius)',
+            padding: '1.25rem',
+            marginBottom: '1rem',
+            background: 'var(--background)',
+          }}
+        >
+          <h2 className="section-title" style={{ marginBottom: '0.75rem' }}>
+            Why Buyers Choose EasySell
+          </h2>
+          <ul style={{ color: 'var(--muted-foreground)', paddingLeft: '1rem' }}>
+            <li>Built for scale when demand grows rapidly.</li>
+            <li>Startup agility with execution-focused delivery.</li>
+            <li>Clear communication and dependable turnaround.</li>
+          </ul>
+        </div>
+
+        <div
+          style={{
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius)',
+            padding: '1.25rem',
+            background: 'var(--muted)',
+            marginBottom: '2rem',
+          }}
+        >
+          <h2 className="section-title" style={{ marginBottom: '0.75rem' }}>
+            Vision
+          </h2>
+          <p style={{ color: 'var(--muted-foreground)' }}>
+            Build the most dependable startup ecosystem for YouTube channel demand
+            where buyers can scale without limits.
+          </p>
+        </div>
+
+        <div
+          style={{
+            textAlign: 'center',
+            padding: '1rem 0 2.25rem',
+          }}
+        >
+          <p style={{ color: 'var(--muted-foreground)', marginBottom: '0.75rem' }}>
+            Looking for a scalable YouTube channel supply partner?
+          </p>
+          <Link href="/admin/login" className="btn btn-outline">
+            Partner With EasySell
           </Link>
         </div>
-      )}
-      {/* Hidden Compact Admin Link */}
-      <Link 
-        href="/admin" 
+      </section>
+
+      <Link
+        href="/admin"
         className="admin-secret-link"
         style={{
           position: 'fixed',
@@ -95,7 +114,7 @@ export default async function Home(props) {
           right: '8px',
           width: '10px',
           height: '10px',
-          backgroundColor: '#6366f1',
+          backgroundColor: '#475569',
           borderRadius: '2px',
           zIndex: 9999,
           cursor: 'pointer',
