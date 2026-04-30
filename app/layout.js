@@ -3,8 +3,8 @@ import './globals.css'
 import ConditionalLayout from '@/components/ConditionalLayout'
 
 export const metadata = {
-  title: 'EasySell - YouTube Channel Supply Startup',
-  description: 'EasySell helps high-volume buyers source YouTube channels for scalable marketing growth.',
+  title: 'YTM Bangladesh - YouTube Channel Supply Network',
+  description: 'YTM Bangladesh helps high-volume buyers source YouTube channels for scalable marketing growth.',
 }
 
 import { UIProvider } from '@/components/UIContext'
