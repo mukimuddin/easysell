@@ -85,6 +85,10 @@ function AdminContent() {
   const [editChannel, setEditChannel] = useState(null); 
   const [editWorker, setEditWorker] = useState(null);
   const [editSource, setEditSource] = useState(null);
+  const [passwordTargetEmployee, setPasswordTargetEmployee] = useState(null);
+  const [employeePasswordInput, setEmployeePasswordInput] = useState('');
+  const [showEmployeePassword, setShowEmployeePassword] = useState(false);
+  const [lastResetPassword, setLastResetPassword] = useState('');
 
   // Bulk Sell State
   const [sellWorkerId, setSellWorkerId] = useState('');
@@ -377,6 +381,47 @@ function AdminContent() {
     } catch (err) {
       console.error(err);
       toast.error('An error occurred');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleEmployeePasswordReset = async () => {
+    if (!passwordTargetEmployee) return;
+    setSubmitting(true);
+    try {
+      const useGenerated = employeePasswordInput.trim() === '';
+      const res = await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: passwordTargetEmployee.admin_id,
+          newPassword: useGenerated ? undefined : employeePasswordInput.trim(),
+          generate: useGenerated,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || 'Failed to reset password');
+        return;
+      }
+
+      const shownPassword = data.generatedPassword;
+      if (shownPassword) {
+        setLastResetPassword(shownPassword);
+        try {
+          await navigator.clipboard.writeText(shownPassword);
+          toast.success(`Password reset. New password copied: ${shownPassword}`);
+        } catch {
+          toast.success(`Password reset. New password: ${shownPassword}`);
+        }
+      } else {
+        toast.success('Password reset successfully.');
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Error resetting password');
     } finally {
       setSubmitting(false);
     }
@@ -1312,6 +1357,19 @@ function AdminContent() {
                          <td style={{ textAlign: 'right' }}>
                              <div className="manage-actions">
                                  <button onClick={() => setEditEmployee(emp)} className="btn btn-sm btn-outline" title="Edit Profile"><HiPencilAlt /></button>
+                                <button
+                                  onClick={() => {
+                                    setPasswordTargetEmployee(emp);
+                                    setEmployeePasswordInput('');
+                                    setShowEmployeePassword(false);
+                                    setLastResetPassword('');
+                                  }}
+                                  className="btn btn-sm btn-outline"
+                                  title="Reset Password"
+                                  style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                                >
+                                  <HiKey />
+                                </button>
                                  <button onClick={async () => { if(await showConfirm('Delete user?')) { await fetch(`/api/admin/users?id=${emp.admin_id}`, {method: 'DELETE'}); loadData(); } }} className="btn btn-sm btn-reject" title="Delete"><HiOutlineTrash /></button>
                              </div>
                          </td>
@@ -1656,6 +1714,71 @@ function AdminContent() {
                </form>
             </div>
          </div>
+      )}
+
+      {passwordTargetEmployee && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div style={{ marginBottom: '1rem', fontWeight: 700 }}>
+              Reset Password: {passwordTargetEmployee.username}
+            </div>
+
+            <div className="compact-form-group">
+              <label>New Password (optional)</label>
+              <div style={{ display: 'flex', gap: '0.4rem' }}>
+                <input
+                  type={showEmployeePassword ? 'text' : 'password'}
+                  className="compact-form-control"
+                  value={employeePasswordInput}
+                  onChange={(e) => setEmployeePasswordInput(e.target.value)}
+                  placeholder="Leave empty to auto-generate"
+                />
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline"
+                  onClick={() => setShowEmployeePassword((prev) => !prev)}
+                  title={showEmployeePassword ? 'Hide' : 'Show'}
+                >
+                  {showEmployeePassword ? <HiEyeOff /> : <HiEye />}
+                </button>
+              </div>
+              <div style={{ fontSize: '11px', color: '#64748b', marginTop: '0.4rem' }}>
+                Empty রাখলে auto-generated temporary password set হবে।
+              </div>
+            </div>
+
+            {lastResetPassword && (
+              <div style={{ border: '1px solid #e2e8f0', borderRadius: '6px', padding: '0.6rem', marginBottom: '0.8rem' }}>
+                <div style={{ fontSize: '10px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Latest Password</div>
+                <div style={{ marginTop: '0.25rem', fontWeight: 700 }}>{lastResetPassword}</div>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: '0.4rem', marginTop: '1.2rem' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setPasswordTargetEmployee(null);
+                  setEmployeePasswordInput('');
+                  setLastResetPassword('');
+                }}
+                className="btn btn-sm btn-outline"
+                style={{ flex: 1 }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleEmployeePasswordReset}
+                disabled={submitting}
+                className="btn btn-sm btn-approve"
+                style={{ flex: 1 }}
+              >
+                {submitting ? '...' : 'Reset'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
