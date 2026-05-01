@@ -85,116 +85,51 @@ export default function Home() {
 
   return (
     <main>
-      <section className="hero hero-v2" style={{ paddingBottom: '1rem' }}>
-        <div
-          className="common-container hero-v2-grid"
-          style={{
-            maxWidth: '980px',
-            gap: '0.75rem',
-          }}
-        >
-          <div
-            className="hero-v2-primary"
-            style={{
-              border: '1px solid var(--border)',
-              borderRadius: '14px',
-              background:
-                'radial-gradient(circle at top right, rgba(56, 189, 248, 0.2), transparent 36%), linear-gradient(145deg, #0b1220 0%, #1e293b 55%, #0f172a 100%)',
-              color: '#f8fafc',
-              padding: '1.15rem',
-              boxShadow: '0 8px 30px rgba(15, 23, 42, 0.22)',
-            }}
-          >
-            <h1
-              style={{
-                marginBottom: '0.5rem',
-                color: '#ffffff',
-                WebkitTextFillColor: '#ffffff',
-                background: 'none',
-                textShadow: '0 1px 10px rgba(15, 23, 42, 0.45)',
-                fontSize: 'clamp(1.6rem, 4.4vw, 2.9rem)',
-              }}
-            >
-              YTM Bangladesh
-            </h1>
-            <p style={{ color: '#ffffff', fontSize: 'clamp(0.85rem, 1.9vw, 0.96rem)', marginBottom: '0.75rem' }}>
-              Ultra-scaled YouTube channel supply network for brands, agencies, and growth
-              operations teams needing reliable deal velocity with structured compliance.
-            </p>
-            <div className="hero-v2-tags" style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
-              <Tag text="Established 2017" />
-              <Tag text="96 Partner Channels" />
-              <Tag text="38,500+ Deals Closed" />
-              <Tag text="Global Workforce" />
-            </div>
-            <div className="hero-v2-cta" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <Link
-                href="/admin/login"
-                className="btn"
-                style={{
-                  backgroundColor: '#f8fafc',
-                  color: '#0f172a',
-                  borderColor: '#f8fafc',
-                }}
-              >
-                Start Partnership
-              </Link>
-              <Link
-                href="/buyer/register"
-                className="btn btn-outline"
-                style={{
-                  color: '#ffffff',
-                  borderColor: 'rgba(255, 255, 255, 0.72)',
-                  backgroundColor: 'rgba(255, 255, 255, 0.06)',
-                }}
-              >
-                View Buyer Desk
-              </Link>
-              <Link
-                href="/jobs"
-                className="btn btn-outline"
-                style={{
-                  color: '#ffffff',
-                  borderColor: 'rgba(255, 255, 255, 0.72)',
-                  backgroundColor: 'rgba(255, 255, 255, 0.06)',
-                }}
-              >
-                Job Circular
-              </Link>
-            </div>
-          </div>
-
-          <div
-            className="hero-v2-snapshot"
-            style={{
-              border: '1px solid var(--border)',
-              borderRadius: '14px',
-              padding: '0.9rem',
-              background: 'var(--background)',
-            }}
-          >
-            <p style={{ fontSize: '0.76rem', fontWeight: 700, marginBottom: '0.5rem' }}>Live Snapshot</p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.45rem' }}>
-              {heroKpis.map((item) => (
-                <div
-                  key={item.label}
-                  style={{
-                    border: '1px solid var(--border)',
-                    borderRadius: '8px',
-                    padding: '0.5rem',
-                    background: 'var(--muted)',
-                  }}
-                >
-                  <p style={{ fontSize: '0.7rem', color: 'var(--muted-foreground)' }}>{item.label}</p>
-                  <p style={{ fontSize: '0.95rem', fontWeight: 700 }}>{item.value}</p>
+      <section className="hero hero-v2" style={{ paddingBottom: '0.7rem', paddingTop: '0.3rem' }}>
+        <div className="common-container hero-unique-wrap" style={{ maxWidth: '980px' }}>
+          <div className="hero-unique-shell" style={{ border: '1px solid var(--border)', borderRadius: '16px', background: '#fff', overflow: 'hidden' }}>
+            <div className="hero-unique-grid">
+              <div className="hero-unique-main" style={{ padding: '1.1rem 1.1rem 1rem' }}>
+                <div className="hero-unique-kicker" style={{ fontSize: '10px', letterSpacing: '0.14em', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: '0.45rem' }}>
+                  Quiet Infrastructure For Noisy Growth
                 </div>
-              ))}
-            </div>
-            <div style={{ marginTop: '0.55rem', borderTop: '1px dashed var(--border)', paddingTop: '0.5rem' }}>
-              <p style={{ fontSize: '0.73rem', color: 'var(--muted-foreground)' }}>
-                Today: 137 open buyer requests, 62 active handovers, 11 escalations under
-                compliance review.
-              </p>
+                <h1 className="hero-unique-title" style={{ fontSize: 'clamp(1.45rem, 3.8vw, 2.35rem)', lineHeight: 1.1, letterSpacing: '-0.03em', marginBottom: '0.5rem', color: '#0f172a' }}>
+                  We do not sell channels. We architect market readiness.
+                </h1>
+                <p className="hero-unique-copy" style={{ fontSize: '0.84rem', color: '#475569', maxWidth: '600px', marginBottom: '0.85rem' }}>
+                  YTM Bangladesh runs a low-noise, high-control supply system where sourcing, screening, matching, and handover
+                  happen as one continuous operating line.
+                </p>
+
+                <div className="hero-unique-tags" style={{ display: 'flex', gap: '0.42rem', flexWrap: 'wrap', marginBottom: '0.8rem' }}>
+                  <span style={{ fontSize: '11px', border: '1px solid #e2e8f0', padding: '0.24rem 0.5rem', borderRadius: '999px', color: '#0f172a' }}>Deal Integrity First</span>
+                  <span style={{ fontSize: '11px', border: '1px solid #e2e8f0', padding: '0.24rem 0.5rem', borderRadius: '999px', color: '#0f172a' }}>Operationally Verified</span>
+                  <span style={{ fontSize: '11px', border: '1px solid #e2e8f0', padding: '0.24rem 0.5rem', borderRadius: '999px', color: '#0f172a' }}>Hybrid Workforce Model</span>
+                </div>
+
+                <div className="hero-unique-actions" style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap' }}>
+                  <Link href="/contact-us" className="btn">Contact Team</Link>
+                  <Link href="/jobs" className="btn btn-outline">Job Circular</Link>
+                </div>
+              </div>
+
+              <div className="hero-unique-side" style={{ borderLeft: '1px solid #e2e8f0', background: 'linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)', padding: '0.9rem 0.85rem' }}>
+                <div style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '0.1em', color: '#94a3b8', textTransform: 'uppercase', marginBottom: '0.45rem' }}>
+                  Signal Board
+                </div>
+                <div className="hero-unique-signal-list" style={{ display: 'grid', gap: '0.35rem' }}>
+                  {heroKpis.map((item, i) => (
+                    <div key={item.label} className="hero-unique-signal-item" style={{ display: 'grid', gridTemplateColumns: '16px 1fr auto', alignItems: 'center', gap: '0.45rem', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0.35rem 0.45rem', background: '#fff' }}>
+                      <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: i % 2 === 0 ? '#10b981' : '#3b82f6', margin: '0 auto' }}></div>
+                      <span style={{ fontSize: '11px', color: '#64748b' }}>{item.label}</span>
+                      <span style={{ fontSize: '12px', fontWeight: 700, color: '#0f172a' }}>{item.value}</span>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ marginTop: '0.55rem', border: '1px dashed #cbd5e1', borderRadius: '8px', padding: '0.45rem', fontSize: '10.5px', color: '#64748b' }}>
+                  Live desk pulse: buyer queue, field onboarding, and verification nodes run continuously with monitored handoff states.
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -352,32 +287,14 @@ export default function Home() {
           <p style={{ color: 'var(--muted-foreground)', marginBottom: '0.75rem' }}>
             Looking for a scalable YouTube channel supply partner?
           </p>
-          <Link href="/admin/login" className="btn btn-outline">
+          <Link href="/contact-us" className="btn btn-outline">
             Partner With YTM Bangladesh
           </Link>
-          <Link href="/buyer/register" className="btn" style={{ marginLeft: '0.5rem' }}>
-            Buyer Registration
+          <Link href="/help-center" className="btn" style={{ marginLeft: '0.5rem' }}>
+            Read Help Center
           </Link>
         </div>
       </section>
-
-      <Link
-        href="/admin"
-        className="admin-secret-link"
-        style={{
-          position: 'fixed',
-          bottom: '8px',
-          right: '8px',
-          width: '10px',
-          height: '10px',
-          backgroundColor: '#475569',
-          borderRadius: '2px',
-          zIndex: 9999,
-          cursor: 'pointer',
-          textDecoration: 'none',
-        }}
-        title="Admin"
-      />
     </main>
   );
 }

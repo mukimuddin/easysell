@@ -21,7 +21,7 @@ export default function Footer() {
           <h3>Marketplace</h3>
           <ul className="footer-links">
             <li><Link href="/" className="footer-link">Browse Channels</Link></li>
-            <li><Link href="/admin" className="footer-link">Admin Dashboard</Link></li>
+            <li><Link href="/jobs" className="footer-link">Careers</Link></li>
           </ul>
         </div>
         
