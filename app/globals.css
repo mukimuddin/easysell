@@ -1,5 +1,84 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
 
+/* Jobs page */
+.jobs-wrap {
+  max-width: 900px;
+  padding-top: 1.2rem;
+  padding-bottom: 1.8rem;
+}
+
+.jobs-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem;
+  background: var(--background);
+}
+
+.jobs-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.jobs-title {
+  margin: 0;
+  font-size: clamp(1.1rem, 3.8vw, 1.4rem);
+  line-height: 1.25;
+}
+
+.jobs-meta {
+  text-align: right;
+  min-width: 220px;
+}
+
+.jobs-actions {
+  margin-top: 1rem;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.jobs-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .jobs-wrap {
+    padding-top: 0.8rem;
+    padding-bottom: 1.2rem;
+  }
+
+  .jobs-card {
+    padding: 0.8rem;
+    border-radius: 10px;
+  }
+
+  .jobs-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .jobs-meta {
+    text-align: left;
+    min-width: 0;
+    width: 100%;
+    display: grid;
+    gap: 0.2rem;
+  }
+
+  .jobs-actions {
+    flex-direction: column;
+  }
+
+  .jobs-btn {
+    width: 100%;
+  }
+}
+
 :root {
   --background: #ffffff;
   --foreground: #09090b;

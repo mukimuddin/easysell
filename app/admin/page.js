@@ -70,6 +70,7 @@ function AdminContent() {
   const [channels, setChannels] = useState([]);
   const [workers, setWorkers] = useState([]);
   const [admins, setAdmins] = useState([]);
+  const [buyers, setBuyers] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [analytics, setAnalytics] = useState(null);
@@ -231,11 +232,14 @@ function AdminContent() {
       setSources(Array.isArray(sData) ? sData : []);
 
       if (profile.role === 'admin') {
-        const uRes = await fetch('/api/admin/users');
+        const [uRes, eRes, bRes] = await Promise.all([
+          fetch('/api/admin/users'),
+          fetch('/api/admin/employees'),
+          fetch('/api/admin/buyers')
+        ]);
         setAdmins(await uRes.json());
-        
-        const eRes = await fetch('/api/admin/employees');
         setEmployees(await eRes.json());
+        setBuyers(await bRes.json());
       }
 
       // Fetch personal profile for everyone
@@ -429,6 +433,28 @@ function AdminContent() {
 
   const [submitting, setSubmitting] = useState(false);
 
+  const handleBuyerStatus = async (buyerId, status) => {
+    const approved = await showConfirm(`Set this buyer as ${status.toUpperCase()}?`);
+    if (!approved) return;
+    try {
+      const res = await fetch('/api/admin/buyers', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: buyerId, status })
+      });
+      if (res.ok) {
+        toast.success('Buyer status updated.');
+        loadData();
+      } else {
+        const data = await res.json();
+        toast.error(data.error || 'Failed to update buyer.');
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to update buyer.');
+    }
+  };
+
   const handleAddWorker = async (e) => {
     e.preventDefault();
     if (submitting) return;
@@ -609,7 +635,7 @@ function AdminContent() {
                 Internal Management System
               </div>
               <h1 className="admin-title" style={{ fontSize: '20px', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                 {activeTab === 'sales' ? 'Profit Ledger' : activeTab === 'admins' ? 'User Administration' : activeTab === 'sell' ? 'Sell Unit' : activeTab === 'dashboard' ? 'Market Overview' : activeTab === 'profile' ? 'My Profile' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
+                 {activeTab === 'sales' ? 'Profit Ledger' : activeTab === 'admins' ? 'User Administration' : activeTab === 'buyers' ? 'Buyer Requests' : activeTab === 'sell' ? 'Sell Unit' : activeTab === 'dashboard' ? 'Market Overview' : activeTab === 'profile' ? 'My Profile' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
               </h1>
            </div>
            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
@@ -1095,7 +1121,7 @@ function AdminContent() {
         </div>
       )}
 
-      {['monitoring', 'channels', 'sales', 'workers', 'sources', 'admins', 'employees', 'sell'].includes(activeTab) && !editEmployee && (
+      {['monitoring', 'channels', 'sales', 'workers', 'sources', 'admins', 'employees', 'buyers', 'sell'].includes(activeTab) && !editEmployee && (
         <div className="compact-table-wrapper">
           {activeTab !== 'sell' && (
           <div className="table-responsive">
@@ -1402,6 +1428,39 @@ function AdminContent() {
                         </td>
                       </tr>
                     ))}
+                  </tbody>
+                </>
+              )}
+
+              {activeTab === 'buyers' && user.role === 'admin' && (
+                <>
+                  <thead>
+                    <tr><th>SL.</th><th>Name</th><th>Company</th><th>Phone</th><th>Email</th><th>Status</th><th style={{ textAlign: 'right' }}>Action</th></tr>
+                  </thead>
+                  <tbody>
+                    {buyers.map((buyer, idx) => (
+                      <tr key={buyer.id}>
+                        <td>{idx + 1}</td>
+                        <td><div style={{ fontWeight: 600, fontSize: '12px' }}>{buyer.full_name}</div></td>
+                        <td><div style={{ fontSize: '12px' }}>{buyer.company_name || 'N/A'}</div></td>
+                        <td><div style={{ fontSize: '12px' }}>{buyer.phone}</div></td>
+                        <td><div style={{ fontSize: '12px' }}>{buyer.email}</div></td>
+                        <td>
+                          <div style={{ fontSize: '11px', fontWeight: 700, color: buyer.status === 'approved' ? '#059669' : buyer.status === 'rejected' ? '#dc2626' : '#b45309' }}>
+                            {buyer.status?.toUpperCase()}
+                          </div>
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
+                          <div className="manage-actions">
+                            <button onClick={() => handleBuyerStatus(buyer.id, 'approved')} className="btn btn-sm btn-approve" title="Approve" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}><HiCheck /> Approve</button>
+                            <button onClick={() => handleBuyerStatus(buyer.id, 'rejected')} className="btn btn-sm btn-reject" title="Reject" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}><HiX /> Reject</button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {buyers.length === 0 && (
+                      <tr><td colSpan="7" style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>No buyer requests yet.</td></tr>
+                    )}
                   </tbody>
                 </>
               )}

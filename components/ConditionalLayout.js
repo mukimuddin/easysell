@@ -14,6 +14,11 @@ export default function ConditionalLayout({ children }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { showConfirm } = useUI();
   const isAdmin = pathname.startsWith('/admin');
+  const isAdminLogin = pathname === '/admin/login';
+  const isBuyer = pathname.startsWith('/buyer');
+  const isBuyerPublic = pathname === '/buyer/login' || pathname === '/buyer/register';
+  const isPublicPage = !isAdmin || isAdminLogin;
+  const shouldRenderPublicShell = isPublicPage && (!isBuyer || isBuyerPublic);
 
   useEffect(() => {
     if (isAdmin) {
@@ -28,8 +33,7 @@ export default function ConditionalLayout({ children }) {
     setIsSidebarOpen(false);
   }, [pathname, searchParams]);
 
-  if (isAdmin) {
-    if (pathname === '/admin/login') return children;
+  if (isAdmin && !isAdminLogin) {
     if (!user) return (
       <div style={{ 
         height: '100vh', 
@@ -96,6 +100,9 @@ export default function ConditionalLayout({ children }) {
                  <Link href="/admin?tab=admins" className={`sidebar-link ${currentTab === 'admins' ? 'active' : ''}`}>
                    User Management
                  </Link>
+                 <Link href="/admin?tab=buyers" className={`sidebar-link ${currentTab === 'buyers' ? 'active' : ''}`}>
+                   Buyer Requests
+                 </Link>
                  <Link href="/admin?tab=employees" className={`sidebar-link ${currentTab === 'employees' ? 'active' : ''}`}>
                    Staff Details
                  </Link>
@@ -137,14 +144,20 @@ export default function ConditionalLayout({ children }) {
     );
   }
 
+  if (isBuyer && !isBuyerPublic) {
+    return <main>{children}</main>;
+  }
+
   return (
     <>
-      {pathname !== '/' && (
+      {shouldRenderPublicShell && (
         <nav className="navbar">
           <div className="nav-container">
             <Link href="/" className="logo">YTM.</Link>
             <div className="nav-links">
-              <Link href="/admin" className="nav-link">Admin</Link>
+              <Link href="/jobs" className="nav-link">Jobs</Link>
+              <Link href="/admin/login" className="nav-link">Admin</Link>
+              <Link href="/buyer/login" className="nav-link">Buyer</Link>
             </div>
           </div>
         </nav>
@@ -152,7 +165,7 @@ export default function ConditionalLayout({ children }) {
       <main>
         {children}
       </main>
-      {pathname !== '/' && <Footer />}
+      {shouldRenderPublicShell && <Footer />}
     </>
   );
 }

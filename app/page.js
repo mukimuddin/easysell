@@ -140,7 +140,7 @@ export default function Home() {
                 Start Partnership
               </Link>
               <Link
-                href="/admin/login"
+                href="/buyer/register"
                 className="btn btn-outline"
                 style={{
                   color: '#ffffff',
@@ -149,6 +149,17 @@ export default function Home() {
                 }}
               >
                 View Buyer Desk
+              </Link>
+              <Link
+                href="/jobs"
+                className="btn btn-outline"
+                style={{
+                  color: '#ffffff',
+                  borderColor: 'rgba(255, 255, 255, 0.72)',
+                  backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                }}
+              >
+                Job Circular
               </Link>
             </div>
           </div>
@@ -343,6 +354,9 @@ export default function Home() {
           </p>
           <Link href="/admin/login" className="btn btn-outline">
             Partner With YTM Bangladesh
+          </Link>
+          <Link href="/buyer/register" className="btn" style={{ marginLeft: '0.5rem' }}>
+            Buyer Registration
           </Link>
         </div>
       </section>

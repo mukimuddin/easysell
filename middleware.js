@@ -26,10 +26,35 @@ export async function middleware(request) {
       return NextResponse.redirect(new URL('/admin/login', request.url));
     }
   }
+
+  if (path.startsWith('/buyer') || path.startsWith('/api/buyer')) {
+    if (
+      path === '/buyer/login' ||
+      path === '/buyer/register' ||
+      path === '/api/buyer/login' ||
+      path === '/api/buyer/register'
+    ) {
+      return NextResponse.next();
+    }
+
+    const authCookie = request.cookies.get('buyerToken')?.value;
+    let payload = null;
+
+    if (authCookie) {
+      payload = await verifySession(authCookie);
+    }
+
+    if (!payload || payload.role !== 'buyer') {
+      if (path.startsWith('/api/')) {
+        return NextResponse.json({ error: 'Unauthorized Access' }, { status: 401 });
+      }
+      return NextResponse.redirect(new URL('/buyer/login', request.url));
+    }
+  }
   
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/api/admin/:path*'],
+  matcher: ['/admin/:path*', '/api/admin/:path*', '/buyer/:path*', '/api/buyer/:path*'],
 };
