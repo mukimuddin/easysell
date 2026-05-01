@@ -153,7 +153,10 @@ export default function ConditionalLayout({ children }) {
       {shouldRenderPublicShell && (
         <nav className="navbar">
           <div className="nav-container">
-            <Link href="/" className="logo">YTM.</Link>
+            <Link href="/" className="logo">
+              <span className="logo-dot"></span>
+              YTM.
+            </Link>
             <div className="nav-links">
               <Link href="/jobs" className="nav-link">Jobs</Link>
               <Link href="/admin/login" className="nav-link">Admin</Link>
@@ -162,6 +165,7 @@ export default function ConditionalLayout({ children }) {
           </div>
         </nav>
       )}
+      {shouldRenderPublicShell && <div className="public-nav-spacer" />}
       <main>
         {children}
       </main>
