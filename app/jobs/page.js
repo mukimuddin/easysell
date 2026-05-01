@@ -41,72 +41,76 @@ export default function JobsPage() {
 
   return (
     <main className="common-container jobs-wrap">
-      <div className="jobs-card">
-        <div className="jobs-header">
-          <div>
-            <div style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--muted-foreground)', fontWeight: 700, letterSpacing: '0.06em' }}>
-              Job Circular
-            </div>
-            <h1 className="jobs-title">চ্যানেল সোর্সিং এক্সিকিউটিভ (ফিল্ড)</h1>
+      <div className="jobs-header">
+        <div>
+          <div style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--muted-foreground)', fontWeight: 700, letterSpacing: '0.06em' }}>
+            Job Circular
           </div>
-          <div className="jobs-meta">
-            <div style={{ fontSize: '12px', color: 'var(--muted-foreground)' }}>কোম্পানির নাম: <strong style={{ color: 'var(--foreground)' }}>YTM Bangladesh</strong></div>
-            <div style={{ fontSize: '12px', color: 'var(--muted-foreground)' }}>কাজের ধরন: <strong style={{ color: 'var(--foreground)' }}>চুক্তিভিত্তিক</strong></div>
-            <div style={{ fontSize: '12px', color: 'var(--muted-foreground)' }}>কাজের সেটআপ: <strong style={{ color: 'var(--foreground)' }}>হাইব্রিড (Online + Offline Field)</strong></div>
-          </div>
+          <h1 className="jobs-title">চ্যানেল সোর্সিং এক্সিকিউটিভ (ফিল্ড)</h1>
         </div>
-
-        <section style={{ marginTop: '0.85rem' }}>
-          <h2 style={{ marginBottom: '0.35rem', fontSize: '1rem' }}>কাজের ধরন (২টি অপশন)</h2>
-          <ul style={{ margin: 0, paddingLeft: '1.1rem', display: 'grid', gap: '0.3rem' }}>
-            <li style={{ fontSize: '13px', color: 'var(--muted-foreground)' }}>
-              <strong>Online Mode:</strong> বাসা/রিমোট থেকে ডিজিটাল চ্যানেলে লিড সংগ্রহ, যোগাযোগ ও onboarding।
-            </li>
-            <li style={{ fontSize: '13px', color: 'var(--muted-foreground)' }}>
-              <strong>Offline Field Mode:</strong> মাঠ পর্যায়ে সরাসরি যোগাযোগ, মিটিং ও ক্লায়েন্ট onboarding।
-            </li>
-          </ul>
-        </section>
-
-        <Section title="সবার জন্য মূল দায়িত্ব" items={commonResponsibilities} />
-        <Section title="Online Mode দায়িত্ব" items={onlineModeResponsibilities} />
-        <Section title="Offline Field Mode দায়িত্ব" items={fieldModeResponsibilities} />
-        <Section title="প্রয়োজনীয়তা ও দক্ষতা" items={requirements} />
-        <Section title="ন্যূনতম যোগ্যতার প্রয়োজনীয়তা" items={minimumEligibility} />
-
-        <div style={{ marginTop: '0.9rem', borderTop: '1px solid var(--border)', paddingTop: '0.8rem' }}>
-          <div style={{ fontSize: '13px', marginBottom: '0.25rem' }}>
-            <strong>ন্যূনতম অভিজ্ঞতা:</strong> ১ বছরের কম
-          </div>
-          <div style={{ fontSize: '13px', marginBottom: '0.25rem' }}>
-            <strong>অভিজ্ঞতার ধরন:</strong> Online Sales / Telemarketing / Field Marketing - যেকোনো একটিতে অভিজ্ঞতা গ্রহণযোগ্য
-          </div>
-          <div style={{ fontSize: '13px', marginBottom: '0.25rem' }}>
-            <strong>লোকেশন:</strong> ঢাকা
-          </div>
-          <div style={{ fontSize: '13px', marginBottom: '0.25rem' }}>
-            <strong>বেতন:</strong> ২০,০০০–৩০,০০০ টাকা + TA/DA
-          </div>
-          <div style={{ fontSize: '13px' }}>
-            <strong>Apply:</strong> <span style={{ fontFamily: 'monospace' }}>ytmarketbd2020</span> (Subject: Application for Field Sourcing Executive)
-          </div>
+        <div className="jobs-meta">
+          <div style={{ fontSize: '12px', color: 'var(--muted-foreground)' }}>কোম্পানির নাম: <strong style={{ color: 'var(--foreground)' }}>YTM Bangladesh</strong></div>
+          <div style={{ fontSize: '12px', color: 'var(--muted-foreground)' }}>কাজের ধরন: <strong style={{ color: 'var(--foreground)' }}>চুক্তিভিত্তিক</strong></div>
+          <div style={{ fontSize: '12px', color: 'var(--muted-foreground)' }}>কাজের সেটআপ: <strong style={{ color: 'var(--foreground)' }}>হাইব্রিড (Online + Offline Field)</strong></div>
         </div>
-
-        <div className="jobs-actions">
-          <Link href="/" className="btn jobs-btn">Back to Home</Link>
-          <a
-            href="https://wa.me/8801601315176?text=Hello%20YTM%20Bangladesh%2C%20I%20want%20information%20about%20the%20Channel%20Sourcing%20Executive%20job%20and%20want%20to%20apply%20with%20my%20CV."
-            target="_blank"
-            rel="noreferrer"
-            className="btn btn-outline jobs-btn"
-          >
-            WhatsApp for Info & CV Apply
-          </a>
-        </div>
-        <p style={{ marginTop: '0.6rem', marginBottom: 0, fontSize: '12px', color: 'var(--muted-foreground)' }}>
-          WhatsApp: +8801601315176 (For information and apply CV)
-        </p>
       </div>
+
+      <section style={{ marginTop: '0.85rem' }}>
+        <h2 style={{ marginBottom: '0.35rem', fontSize: '1rem' }}>কাজের ধরন (২টি অপশন)</h2>
+        <ul style={{ margin: 0, paddingLeft: '1.1rem', display: 'grid', gap: '0.3rem' }}>
+          <li style={{ fontSize: '13px', color: 'var(--muted-foreground)' }}>
+            <strong>Online Mode:</strong> বাসা/রিমোট থেকে ডিজিটাল চ্যানেলে লিড সংগ্রহ, যোগাযোগ ও onboarding।
+          </li>
+          <li style={{ fontSize: '13px', color: 'var(--muted-foreground)' }}>
+            <strong>Offline Field Mode:</strong> মাঠ পর্যায়ে সরাসরি যোগাযোগ, মিটিং ও ক্লায়েন্ট onboarding।
+          </li>
+        </ul>
+      </section>
+
+      <Section title="সবার জন্য মূল দায়িত্ব" items={commonResponsibilities} />
+      <Section title="Online Mode দায়িত্ব" items={onlineModeResponsibilities} />
+      <Section title="Offline Field Mode দায়িত্ব" items={fieldModeResponsibilities} />
+      <Section title="প্রয়োজনীয়তা ও দক্ষতা" items={requirements} />
+      <Section title="ন্যূনতম যোগ্যতার প্রয়োজনীয়তা" items={minimumEligibility} />
+
+      <div style={{ marginTop: '0.9rem', borderTop: '1px solid var(--border)', paddingTop: '0.8rem' }}>
+        <div style={{ fontSize: '13px', marginBottom: '0.25rem' }}>
+          <strong>ন্যূনতম অভিজ্ঞতা:</strong> ১ বছরের কম
+        </div>
+        <div style={{ fontSize: '13px', marginBottom: '0.25rem' }}>
+          <strong>অভিজ্ঞতার ধরন:</strong> Online Sales / Telemarketing / Field Marketing - যেকোনো একটিতে অভিজ্ঞতা গ্রহণযোগ্য
+        </div>
+        <div style={{ fontSize: '13px', marginBottom: '0.25rem' }}>
+          <strong>লোকেশন:</strong> ঢাকা
+        </div>
+        <div style={{ fontSize: '13px', marginBottom: '0.25rem' }}>
+          <strong>বেতন:</strong> ২০,০০০–৩০,০০০ টাকা + TA/DA
+        </div>
+        <div style={{ fontSize: '13px', marginBottom: '0.25rem' }}>
+          <strong>Apply:</strong> <span style={{ fontFamily: 'monospace' }}>ytmarketbd2020@gmail.com</span> (Subject: Application for Field Sourcing Executive)
+        </div>
+        <div style={{ fontSize: '13px' }}>
+          <strong>Call:</strong> +8801601315176
+        </div>
+      </div>
+
+      <div className="jobs-actions">
+        <Link href="/" className="btn jobs-btn">Back to Home</Link>
+        <a href="tel:+8801601315176" className="btn jobs-btn">
+          Call Now
+        </a>
+        <a
+          href="https://wa.me/8801601315176?text=Hello%20YTM%20Bangladesh%2C%20I%20want%20information%20about%20the%20Channel%20Sourcing%20Executive%20job%20and%20want%20to%20apply%20with%20my%20CV."
+          target="_blank"
+          rel="noreferrer"
+          className="btn btn-outline jobs-btn"
+        >
+          WhatsApp for Info & CV Apply
+        </a>
+      </div>
+      <p style={{ marginTop: '0.6rem', marginBottom: 0, fontSize: '12px', color: 'var(--muted-foreground)' }}>
+        WhatsApp: +8801601315176 (For information and apply CV)
+      </p>
     </main>
   );
 }
