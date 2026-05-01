@@ -7,37 +7,44 @@ export default function BuyerPanelPage() {
   const [profile, setProfile] = useState(null);
   const [channels, setChannels] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
+  const [sortBy, setSortBy] = useState('date_desc');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  const loadData = async (isManualRefresh = false) => {
+    try {
+      if (isManualRefresh) setRefreshing(true);
+      setError('');
+      const [profileRes, channelsRes] = await Promise.all([
+        fetch('/api/buyer/me'),
+        fetch('/api/buyer/channels'),
+      ]);
+
+      if (!profileRes.ok) {
+        window.location.href = '/buyer/login';
+        return;
+      }
+
+      const profileData = await profileRes.json();
+      setProfile(profileData);
+
+      if (!channelsRes.ok) {
+        const channelErr = await channelsRes.json();
+        throw new Error(channelErr.error || 'Failed to load channels');
+      }
+      setChannels(await channelsRes.json());
+    } catch (err) {
+      setError(err.message || 'Failed to load buyer panel');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [profileRes, channelsRes] = await Promise.all([
-          fetch('/api/buyer/me'),
-          fetch('/api/buyer/channels'),
-        ]);
-
-        if (!profileRes.ok) {
-          window.location.href = '/buyer/login';
-          return;
-        }
-
-        const profileData = await profileRes.json();
-        setProfile(profileData);
-
-        if (!channelsRes.ok) {
-          const channelErr = await channelsRes.json();
-          throw new Error(channelErr.error || 'Failed to load channels');
-        }
-        setChannels(await channelsRes.json());
-      } catch (err) {
-        setError(err.message || 'Failed to load buyer panel');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     loadData();
   }, []);
 
@@ -52,50 +59,116 @@ export default function BuyerPanelPage() {
     });
   }, [channels, search]);
 
+  const sortedChannels = useMemo(() => {
+    const list = [...filteredChannels];
+    if (sortBy === 'name_asc') list.sort((a, b) => String(a.channel_name || '').localeCompare(String(b.channel_name || '')));
+    if (sortBy === 'name_desc') list.sort((a, b) => String(b.channel_name || '').localeCompare(String(a.channel_name || '')));
+    if (sortBy === 'date_asc') list.sort((a, b) => new Date(a.open_date || a.created_at || 0) - new Date(b.open_date || b.created_at || 0));
+    if (sortBy === 'date_desc') list.sort((a, b) => new Date(b.open_date || b.created_at || 0) - new Date(a.open_date || a.created_at || 0));
+    return list;
+  }, [filteredChannels, sortBy]);
+
+  const totalPages = Math.max(1, Math.ceil(sortedChannels.length / pageSize));
+
+  const paginatedChannels = useMemo(() => {
+    const safePage = Math.min(page, totalPages);
+    const start = (safePage - 1) * pageSize;
+    return sortedChannels.slice(start, start + pageSize);
+  }, [sortedChannels, page, pageSize, totalPages]);
+
+  const stats = useMemo(() => {
+    const withOpenDate = channels.filter((c) => !!c.open_date).length;
+    const specialists = new Set(channels.map((c) => c.worker_name).filter(Boolean)).size;
+    return {
+      total: channels.length,
+      dated: withOpenDate,
+      specialists,
+    };
+  }, [channels]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, sortBy, pageSize]);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
+
   if (loading) {
-    return <main style={{ padding: '1.5rem' }}>Loading buyer panel...</main>;
+    return <main style={{ maxWidth: '980px', margin: '0 auto', padding: '1rem' }}>Loading buyer panel...</main>;
   }
 
   return (
-    <main style={{ maxWidth: '980px', margin: '0 auto', padding: '1rem', display: 'grid', gap: '0.85rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-        <div>
-          <h1 style={{ fontSize: '1.45rem', marginBottom: '0.2rem' }}>Buyer Panel</h1>
-          <p style={{ fontSize: '12px', color: '#64748b' }}>
-            Welcome, {profile?.full_name || 'Buyer'} {profile?.company_name ? `(${profile.company_name})` : ''}
-          </p>
-        </div>
-        <button
-          className="btn btn-sm btn-outline"
-          onClick={async () => {
-            await fetch('/api/buyer/logout', { method: 'POST' });
-            window.location.href = '/buyer/login';
-          }}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.5rem', fontSize: '11px', lineHeight: 1 }}
-        >
-          <HiX />
-          Logout
-        </button>
-      </div>
-
-      {error ? <div style={{ marginBottom: '1rem', color: '#b91c1c' }}>{error}</div> : null}
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '0.65rem' }}>
-        <div className="stat-card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: '74px' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '2px', lineHeight: 1.2, flex: 1 }}>
-            <div className="stat-label" style={{ margin: 0 }}>Online Channels</div>
-            <div className="stat-value" style={{ margin: 0, textAlign: 'center' }}>{channels.length}</div>
+    <main style={{ maxWidth: '980px', margin: '0 auto', padding: '1rem', display: 'grid', gap: '0.6rem' }}>
+      <section className="buyer-workspace-section" style={{ border: '1px solid #e2e8f0', borderRadius: '10px', background: '#fff', padding: '0.75rem' }}>
+        <div className="buyer-workspace-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.7rem', flexWrap: 'wrap' }}>
+          <div className="buyer-workspace-copy" style={{ minWidth: 0 }}>
+            <div className="buyer-workspace-kicker" style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '0.2rem' }}>
+              Buyer Workspace
+            </div>
+            <h1 className="buyer-workspace-title" style={{ fontSize: '1.15rem', marginBottom: '0.15rem', lineHeight: 1.2 }}>Channel Inventory Desk</h1>
+            <p className="buyer-workspace-subtitle" style={{ fontSize: '12px', color: '#64748b', lineHeight: 1.35 }}>
+              {profile?.full_name || 'Buyer'} {profile?.company_name ? `• ${profile.company_name}` : ''}
+            </p>
           </div>
-          <HiCube style={{ fontSize: '1.2rem', color: '#2563eb', flexShrink: 0 }} />
-        </div>
-      </div>
 
-      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0.55rem 0.75rem' }}>
+          <div className="buyer-workspace-actions" style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              className="btn btn-sm btn-outline"
+              onClick={() => loadData(true)}
+              disabled={refreshing}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.5rem', fontSize: '11px' }}
+            >
+              <HiRefresh />
+              {refreshing ? 'Refreshing...' : 'Refresh'}
+            </button>
+            <button
+              className="btn btn-sm btn-outline"
+              onClick={async () => {
+                await fetch('/api/buyer/logout', { method: 'POST' });
+                window.location.href = '/buyer/login';
+              }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.5rem', fontSize: '11px', lineHeight: 1 }}
+            >
+              <HiX />
+              Logout
+            </button>
+          </div>
+        </div>
+
+        <div className="buyer-kpi-grid" style={{ marginTop: '0.65rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.45rem' }}>
+          <div className="buyer-kpi-card" style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0.45rem 0.55rem', background: '#f8fafc' }}>
+            <div className="buyer-kpi-label" style={{ fontSize: '10px', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>Online</div>
+            <div className="buyer-kpi-value" style={{ marginTop: '2px', fontSize: '17px', fontWeight: 800, color: '#0f172a' }}>{stats.total}</div>
+          </div>
+          <div className="buyer-kpi-card" style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0.45rem 0.55rem', background: '#f8fafc' }}>
+            <div className="buyer-kpi-label" style={{ fontSize: '10px', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>With Date</div>
+            <div className="buyer-kpi-value" style={{ marginTop: '2px', fontSize: '17px', fontWeight: 800, color: '#0f172a' }}>{stats.dated}</div>
+          </div>
+          <div className="buyer-kpi-card" style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0.45rem 0.55rem', background: '#f8fafc' }}>
+            <div className="buyer-kpi-label" style={{ fontSize: '10px', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>Specialists</div>
+            <div className="buyer-kpi-value" style={{ marginTop: '2px', fontSize: '17px', fontWeight: 800, color: '#0f172a' }}>{stats.specialists}</div>
+          </div>
+        </div>
+
+        <div className="buyer-workspace-note" style={{ marginTop: '0.55rem', border: '1px dashed #dbeafe', borderRadius: '8px', background: '#f8fbff', padding: '0.45rem 0.55rem', fontSize: '11px', color: '#475569' }}>
+          Practical mode: use search + sort + pagination to quickly shortlist channels before opening links.
+        </div>
+      </section>
+
+      {error ? (
+        <div style={{ border: '1px solid #fecaca', background: '#fef2f2', color: '#b91c1c', borderRadius: '8px', padding: '0.5rem 0.6rem', fontSize: '12px' }}>
+          {error}
+        </div>
+      ) : null}
+
+      <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap', alignItems: 'center', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0.5rem 0.6rem' }}>
         <div style={{ flex: 1, minWidth: '220px', position: 'relative' }}>
-          <HiSearch style={{ position: 'absolute', left: '10px', top: '10px', color: '#94a3b8' }} />
+          <HiSearch style={{ position: 'absolute', left: '9px', top: '9px', color: '#94a3b8' }} />
           <input
             className="compact-form-control"
-            style={{ paddingLeft: '30px' }}
+            style={{ paddingLeft: '28px', fontSize: '12px' }}
             placeholder="Search channel or specialist..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -104,19 +177,42 @@ export default function BuyerPanelPage() {
         <button
           type="button"
           className="btn btn-sm btn-outline"
-          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', fontSize: '11px' }}
           onClick={() => setSearch('')}
         >
           <HiRefresh />
           Reset
         </button>
+        <div className="buyer-dropdown-wrap" style={{ display: 'flex', gap: '0.35rem', margin: '0 auto', flexWrap: 'wrap', justifyContent: 'center' }}>
+          <select
+            className="compact-form-control"
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            style={{ fontSize: '11px', padding: '0.28rem 0.45rem', minWidth: '130px' }}
+          >
+            <option value="date_desc">Newest First</option>
+            <option value="date_asc">Oldest First</option>
+            <option value="name_asc">Name A-Z</option>
+            <option value="name_desc">Name Z-A</option>
+          </select>
+          <select
+            className="compact-form-control"
+            value={pageSize}
+            onChange={(e) => setPageSize(Number(e.target.value))}
+            style={{ fontSize: '11px', padding: '0.28rem 0.45rem', minWidth: '95px' }}
+          >
+            <option value={5}>5 / page</option>
+            <option value={10}>10 / page</option>
+            <option value={20}>20 / page</option>
+          </select>
+        </div>
       </div>
 
       <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
-        <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid #e2e8f0', fontWeight: 600 }}>
-          Online Channels ({filteredChannels.length})
+        <div style={{ padding: '0.62rem 0.8rem', borderBottom: '1px solid #e2e8f0', fontWeight: 700, fontSize: '12px', letterSpacing: '0.02em' }}>
+          ONLINE CHANNEL INVENTORY ({sortedChannels.length})
         </div>
-        <div className="table-responsive">
+        <div className="table-responsive buyer-table-desktop">
           <table className="compact-table">
             <thead>
               <tr>
@@ -124,12 +220,13 @@ export default function BuyerPanelPage() {
                 <th>Channel</th>
                 <th>Specialist</th>
                 <th>Open Date</th>
+                <th style={{ textAlign: 'right' }}>Action</th>
               </tr>
             </thead>
             <tbody>
-              {filteredChannels.map((channel, idx) => (
+              {paginatedChannels.map((channel, idx) => (
                 <tr key={channel.id}>
-                  <td>{idx + 1}</td>
+                  <td>{(page - 1) * pageSize + idx + 1}</td>
                   <td>
                     <a href={channel.channel_link} target="_blank" rel="noreferrer" style={{ color: 'inherit', textDecoration: 'none', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
                       <HiCube style={{ color: '#64748b' }} />
@@ -138,17 +235,78 @@ export default function BuyerPanelPage() {
                   </td>
                   <td>{channel.worker_name || 'N/A'}</td>
                   <td>{channel.open_date ? new Date(channel.open_date).toLocaleDateString('en-GB') : 'N/A'}</td>
+                  <td style={{ textAlign: 'right' }}>
+                    <a
+                      href={channel.channel_link}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn btn-sm btn-outline"
+                      style={{ fontSize: '10px', padding: '0.2rem 0.5rem' }}
+                    >
+                      Open
+                    </a>
+                  </td>
                 </tr>
               ))}
-              {filteredChannels.length === 0 ? (
+              {paginatedChannels.length === 0 ? (
                 <tr>
-                  <td colSpan="4" style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>
+                  <td colSpan="5" style={{ textAlign: 'center', padding: '1.8rem', color: '#94a3b8', fontSize: '12px' }}>
                     No channels match your filter.
                   </td>
                 </tr>
               ) : null}
             </tbody>
           </table>
+        </div>
+
+        <div className="buyer-card-mobile" style={{ display: 'none', padding: '0.55rem', background: '#fff' }}>
+          {paginatedChannels.length > 0 ? (
+            paginatedChannels.map((channel, idx) => (
+              <div key={channel.id} style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0.5rem', marginBottom: '0.45rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.35rem', marginBottom: '0.25rem' }}>
+                  <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 700 }}>
+                    #{(page - 1) * pageSize + idx + 1}
+                  </div>
+                  <a href={channel.channel_link} target="_blank" rel="noreferrer" className="btn btn-sm btn-outline" style={{ fontSize: '10px', padding: '0.18rem 0.42rem' }}>
+                    Open
+                  </a>
+                </div>
+                <div style={{ fontWeight: 700, fontSize: '12px', color: '#0f172a', marginBottom: '0.2rem' }}>{channel.channel_name}</div>
+                <div style={{ fontSize: '11px', color: '#64748b' }}>Specialist: {channel.worker_name || 'N/A'}</div>
+                <div style={{ fontSize: '11px', color: '#64748b' }}>Open Date: {channel.open_date ? new Date(channel.open_date).toLocaleDateString('en-GB') : 'N/A'}</div>
+              </div>
+            ))
+          ) : (
+            <div style={{ textAlign: 'center', padding: '1.2rem', color: '#94a3b8', fontSize: '12px' }}>
+              No channels match your filter.
+            </div>
+          )}
+        </div>
+
+        <div style={{ borderTop: '1px solid #e2e8f0', padding: '0.52rem 0.6rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap', background: '#fafcff' }}>
+          <div style={{ fontSize: '11px', color: '#64748b' }}>
+            Page {page} of {totalPages} • Showing {paginatedChannels.length} items
+          </div>
+          <div style={{ display: 'flex', gap: '0.3rem' }}>
+            <button
+              type="button"
+              className="btn btn-sm btn-outline"
+              style={{ fontSize: '10px', padding: '0.2rem 0.5rem' }}
+              disabled={page <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+            >
+              Prev
+            </button>
+            <button
+              type="button"
+              className="btn btn-sm btn-outline"
+              style={{ fontSize: '10px', padding: '0.2rem 0.5rem' }}
+              disabled={page >= totalPages}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            >
+              Next
+            </button>
+          </div>
         </div>
       </div>
     </main>

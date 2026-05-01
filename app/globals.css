@@ -121,6 +121,105 @@
   background: var(--muted);
 }
 
+/* Buyer panel responsive fallback */
+.buyer-table-desktop { display: block; }
+.buyer-card-mobile { display: none; }
+.buyer-dropdown-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+/* Buyer workspace compact responsiveness */
+@media (max-width: 768px) {
+  .buyer-workspace-section {
+    padding: 0.58rem !important;
+  }
+  .buyer-workspace-head {
+    gap: 0.45rem !important;
+    align-items: center !important;
+  }
+  .buyer-workspace-kicker {
+    font-size: 9px !important;
+    margin-bottom: 0.12rem !important;
+    letter-spacing: 0.06em !important;
+  }
+  .buyer-workspace-title {
+    font-size: 1rem !important;
+    margin-bottom: 0.06rem !important;
+  }
+  .buyer-workspace-subtitle {
+    font-size: 11px !important;
+    line-height: 1.25 !important;
+  }
+  .buyer-workspace-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  .buyer-kpi-grid {
+    margin-top: 0.42rem !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 0.3rem !important;
+  }
+  .buyer-kpi-card {
+    padding: 0.32rem 0.35rem !important;
+  }
+  .buyer-kpi-label {
+    font-size: 8.5px !important;
+  }
+  .buyer-kpi-value {
+    font-size: 14px !important;
+    margin-top: 1px !important;
+  }
+  .buyer-workspace-note {
+    margin-top: 0.35rem !important;
+    padding: 0.3rem 0.38rem !important;
+    font-size: 10px !important;
+    line-height: 1.25 !important;
+  }
+  .buyer-dropdown-wrap {
+    width: 100%;
+    margin-top: 0.1rem;
+    justify-content: center;
+  }
+  .buyer-dropdown-wrap .compact-form-control {
+    min-width: 122px !important;
+    text-align: center;
+  }
+}
+
+@media (max-width: 420px) {
+  .buyer-workspace-section {
+    padding: 0.48rem !important;
+  }
+  .buyer-workspace-title {
+    font-size: 0.92rem !important;
+  }
+  .buyer-workspace-subtitle {
+    font-size: 10px !important;
+  }
+  .buyer-workspace-actions button {
+    font-size: 10px !important;
+    padding: 0.2rem 0.42rem !important;
+  }
+  .buyer-kpi-label {
+    font-size: 8px !important;
+  }
+  .buyer-kpi-value {
+    font-size: 13px !important;
+  }
+  .buyer-dropdown-wrap {
+    gap: 0.25rem;
+  }
+  .buyer-dropdown-wrap .compact-form-control {
+    min-width: 110px !important;
+    font-size: 10px !important;
+    padding: 0.24rem 0.35rem !important;
+  }
+}
+
 @media (max-width: 768px) {
   .jobs-wrap {
     padding-top: 1.25rem;
@@ -161,6 +260,9 @@
     padding-top: 1rem;
     padding-bottom: 1.5rem;
   }
+
+  .buyer-table-desktop { display: none; }
+  .buyer-card-mobile { display: block !important; }
 }
 
 :root {
