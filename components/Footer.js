@@ -21,6 +21,7 @@ export default function Footer() {
           <h3>Marketplace</h3>
           <ul className="footer-links">
             <li><Link href="/" className="footer-link">Browse Channels</Link></li>
+            <li><Link href="/founder" className="footer-link">Founder Profile</Link></li>
             <li><Link href="/jobs" className="footer-link">Careers</Link></li>
           </ul>
         </div>
@@ -56,7 +57,7 @@ export default function Footer() {
       <div className="footer-bottom">
         <p>&copy; {new Date().getFullYear()} YT Marketplace. All rights reserved.</p>
         <div className="footer-socials">
-          <a href="https://wa.me/8801601315176" target="_blank" rel="noreferrer" className="footer-link">WhatsApp</a>
+          <a href="https://wa.me/8801601315176?text=Hello%20YTM%20Bangladesh%2C%20I%20would%20like%20to%20know%20more%20about%20your%20services.%20Please%20guide%20me." target="_blank" rel="noreferrer" className="footer-link">WhatsApp</a>
           <Link href="/contact-us" className="footer-link">Support</Link>
           <Link href="/legal" className="footer-link">Legal</Link>
         </div>

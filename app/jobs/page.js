@@ -100,7 +100,7 @@ export default function JobsPage() {
           Call Now
         </a>
         <a
-          href="https://wa.me/8801601315176?text=Hello%20YTM%20Bangladesh%2C%20I%20want%20information%20about%20the%20Channel%20Sourcing%20Executive%20job%20and%20want%20to%20apply%20with%20my%20CV."
+          href="https://wa.me/8801601315176?text=Hello%20YTM%20Bangladesh%2C%20I%20would%20like%20to%20know%20more%20about%20your%20services.%20Please%20guide%20me."
           target="_blank"
           rel="noreferrer"
           className="btn btn-outline jobs-btn"
