@@ -71,6 +71,7 @@ function AdminContent() {
   const [workers, setWorkers] = useState([]);
   const [admins, setAdmins] = useState([]);
   const [buyers, setBuyers] = useState([]);
+  const [employeeApplications, setEmployeeApplications] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [analytics, setAnalytics] = useState(null);
@@ -232,14 +233,17 @@ function AdminContent() {
       setSources(Array.isArray(sData) ? sData : []);
 
       if (profile.role === 'admin') {
-        const [uRes, eRes, bRes] = await Promise.all([
+        const [uRes, eRes, bRes, jobRes] = await Promise.all([
           fetch('/api/admin/users'),
           fetch('/api/admin/employees'),
-          fetch('/api/admin/buyers')
+          fetch('/api/admin/buyers'),
+          fetch('/api/admin/employee-applications'),
         ]);
         setAdmins(await uRes.json());
         setEmployees(await eRes.json());
         setBuyers(await bRes.json());
+        const jobData = await jobRes.json();
+        setEmployeeApplications(Array.isArray(jobData) ? jobData : []);
       }
 
       // Fetch personal profile for everyone
@@ -455,6 +459,36 @@ function AdminContent() {
     }
   };
 
+  const handleJobApplicationDecision = async (applicationId, status) => {
+    const ok = await showConfirm(
+      status === 'approved'
+        ? 'Approve this applicant? A unique emp- username will be created and they can log in with their registration password.'
+        : 'Reject this application?'
+    );
+    if (!ok) return;
+    try {
+      const res = await fetch('/api/admin/employee-applications', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: applicationId, status }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || 'Update failed.');
+        return;
+      }
+      if (status === 'approved' && data.assignedUsername) {
+        toast.success(`Approved. Username: ${data.assignedUsername}`);
+      } else {
+        toast.success('Application updated.');
+      }
+      loadData();
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to update application.');
+    }
+  };
+
   const handleAddWorker = async (e) => {
     e.preventDefault();
     if (submitting) return;
@@ -635,7 +669,7 @@ function AdminContent() {
                 Internal Management System
               </div>
               <h1 className="admin-title" style={{ fontSize: '20px', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                 {activeTab === 'sales' ? 'Profit Ledger' : activeTab === 'admins' ? 'User Administration' : activeTab === 'buyers' ? 'Buyer Requests' : activeTab === 'sell' ? 'Sell Unit' : activeTab === 'dashboard' ? 'Market Overview' : activeTab === 'profile' ? 'My Profile' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
+                 {activeTab === 'sales' ? 'Profit Ledger' : activeTab === 'admins' ? 'User Administration' : activeTab === 'buyers' ? 'Buyer Requests' : activeTab === 'recruitment' ? 'Job Applications' : activeTab === 'sell' ? 'Sell Unit' : activeTab === 'dashboard' ? 'Market Overview' : activeTab === 'profile' ? 'My Profile' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
               </h1>
            </div>
            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
@@ -1121,7 +1155,7 @@ function AdminContent() {
         </div>
       )}
 
-      {['monitoring', 'channels', 'sales', 'workers', 'sources', 'admins', 'employees', 'buyers', 'sell'].includes(activeTab) && !editEmployee && (
+      {['monitoring', 'channels', 'sales', 'workers', 'sources', 'admins', 'employees', 'buyers', 'recruitment', 'sell'].includes(activeTab) && !editEmployee && (
         <div className="compact-table-wrapper">
           {activeTab !== 'sell' && (
           <div className="table-responsive">
@@ -1134,7 +1168,7 @@ function AdminContent() {
                       <th>Channel</th>
                       <th>Specialist</th>
                       {user.role === 'admin' && <th>Added</th>}
-                      <th>Items</th>
+                      <th>Total uploads</th>
                       <th>Subs</th>
                       <th>Status</th>
                       <th style={{ textAlign: 'right' }}>Manage</th>
@@ -1152,7 +1186,7 @@ function AdminContent() {
                           </td>
                           <td data-label="Specialist"><div style={{ fontSize: '12px' }}>{c.worker_name || 'PENDING'}</div></td>
                           {user.role === 'admin' && <td data-label="Added By"><div style={{ fontSize: '11px', color: '#64748b' }}>{c.creator_name || '---'}</div></td>}
-                          <td data-label="Items"><div style={{ fontSize: '12px', fontWeight: 600 }}>{c.shorts_count || 0}</div></td>
+                          <td data-label="Total uploads"><div style={{ fontSize: '12px', fontWeight: 600 }}>{c.shorts_count || 0}</div></td>
                           <td data-label="Subs"><div style={{ fontSize: '12px', fontWeight: 600 }}>{c.sub_count ? c.sub_count.toLocaleString() : '---'}</div></td>
                           <td data-label="Status">
                              <div className="status-cell">
@@ -1464,6 +1498,79 @@ function AdminContent() {
                   </tbody>
                 </>
               )}
+
+              {activeTab === 'recruitment' && user.role === 'admin' && (
+                <>
+                  <thead>
+                    <tr>
+                      <th>SL.</th>
+                      <th>Name</th>
+                      <th>Phone</th>
+                      <th>Email</th>
+                      <th>Mode</th>
+                      <th>Circular</th>
+                      <th>Status</th>
+                      <th>Username</th>
+                      <th style={{ textAlign: 'right' }}>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {employeeApplications.map((row, idx) => (
+                      <tr key={row.id}>
+                        <td>{idx + 1}</td>
+                        <td><div style={{ fontWeight: 600, fontSize: '12px' }}>{row.full_name}</div></td>
+                        <td><div style={{ fontSize: '12px' }}>{row.phone}</div></td>
+                        <td><div style={{ fontSize: '12px' }}>{row.email}</div></td>
+                        <td><div style={{ fontSize: '11px', textTransform: 'uppercase', fontWeight: 600 }}>{row.work_preference}</div></td>
+                        <td><div style={{ fontSize: '11px', fontFamily: 'monospace' }}>{row.job_reference || '—'}</div></td>
+                        <td>
+                          <div style={{ fontSize: '11px', fontWeight: 700, color: row.status === 'approved' ? '#059669' : row.status === 'rejected' ? '#dc2626' : '#b45309' }}>
+                            {row.status?.toUpperCase()}
+                          </div>
+                        </td>
+                        <td>
+                          <div style={{ fontSize: '11px', fontWeight: 600, fontFamily: 'monospace' }}>
+                            {row.assigned_username || '—'}
+                          </div>
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
+                          {row.status === 'pending' ? (
+                            <div className="manage-actions">
+                              <button
+                                type="button"
+                                onClick={() => handleJobApplicationDecision(row.id, 'approved')}
+                                className="btn btn-sm btn-approve"
+                                title="Approve"
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}
+                              >
+                                <HiCheck /> Approve
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleJobApplicationDecision(row.id, 'rejected')}
+                                className="btn btn-sm btn-reject"
+                                title="Reject"
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}
+                              >
+                                <HiX /> Reject
+                              </button>
+                            </div>
+                          ) : (
+                            <span style={{ fontSize: '11px', color: '#94a3b8' }}>—</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                    {employeeApplications.length === 0 && (
+                      <tr>
+                        <td colSpan="9" style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
+                          No job applications yet.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </>
+              )}
             </table>
           </div>
         )}
@@ -1689,7 +1796,7 @@ function AdminContent() {
             <div className="modal-content">
                <div style={{ marginBottom: '1rem', fontWeight: 700 }}>Update: {activeChannel.channel_name}</div>
                <form onSubmit={handleAddDailyUpdate}>
-                  <div className="compact-form-group"><label>Uploads Today</label><input type="number" name="shorts_count" className="compact-form-control" defaultValue={activeChannel.shorts_count || 0} /></div>
+                  <div className="compact-form-group"><label>Total uploads</label><input type="number" name="shorts_count" className="compact-form-control" defaultValue={activeChannel.shorts_count || 0} /></div>
                   <div className="compact-form-group"><label>Current Subs</label><input type="number" name="sub_count" className="compact-form-control" defaultValue={activeChannel.sub_count || 0} required /></div>
                   <div className="compact-form-group">
                     <label>Status</label>

@@ -5,7 +5,7 @@ const milestones = [
   { year: '2019', title: 'Team Build', desc: 'Built first structured field team and launched repeatable onboarding playbook.' },
   { year: '2021', title: 'Operations Scale', desc: 'Transitioned to hybrid model with dedicated verification, support, and buyer desks.' },
   { year: '2023', title: 'Process Leadership', desc: 'Introduced policy-first workflow and risk-controlled delivery checkpoints.' },
-  { year: '2026', title: 'Regional Recognition', desc: 'Positioned YTM Bangladesh as a high-performance sourcing and delivery operation.' },
+  { year: '2026', title: 'Dhaka HQ / Regional Desk', desc: 'Scaled buyer desks and delivery coordination from Bangladesh across multiple markets.' },
 ];
 
 const achievements = [
@@ -43,27 +43,30 @@ export default function FounderPage() {
           <div className="founder-kicker">Owner & Strategic Lead</div>
           <h1>Mukim Uddin</h1>
           <p>
-            Mukim Uddin is presented as a high-impact operations entrepreneur who transformed YTM Bangladesh into a
-            trusted, process-driven ecosystem for channel sourcing, buyer matching, and scalable delivery execution.
+            Mukim Uddin leads YTM Bangladesh from Dhaka—the operating side of a channel sourcing and buyer-matching
+            network built for people who buy and sell YouTube channels at volume. The idea was never “noise first”:
+            it was steady vetting, clear handovers, and teams that could repeat the same quality week after week.
           </p>
           <p>
-            This profile page is built with premium dummy data to reflect a 100% success-oriented leadership story:
-            long-term consistency, resilient decision-making, and exceptional marketplace execution discipline.
+            Bangladesh’s digital commerce scene moves fast—freelancers, agencies, and cross-border buyers all share the
+            same demand for reliable execution. Mukim’s focus has been to turn that demand into something boringly
+            predictable: defined stages for sourcing, screening, matching, delivery, and follow-up so nothing important
+            lives only in someone’s inbox or voice note.
           </p>
           <p>
-            Over the years, his leadership model has been defined by precision, patience, and process maturity.
-            Rather than chasing short-term visibility, he focused on building durable systems: clear workflow ownership,
-            quality checkpoints, operational accountability, and transparent reporting layers that can survive growth pressure.
+            That meant building from the ground up in a local context—training field and desk teams, keeping escalation
+            paths short, and documenting decisions so growth didn’t turn into chaos. The goal was always operational
+            maturity: who owns what, where quality is checked, and how reporting reaches both sides when timelines tighten.
           </p>
           <p>
-            He is known for converting complex, noisy operations into structured pipelines where every phase is measurable:
-            lead generation, candidate onboarding, channel readiness, delivery assurance, and post-handover continuity.
-            This systems-first mindset enabled teams to improve both speed and reliability without compromising control.
+            Today the workflow stays measurable end to end—from first lead and seller onboarding through channel
+            readiness checks, delivery assurance, and continuity after handover. Speed matters in this market; so does
+            control. The aim is to improve both without cutting corners on verification or buyer trust.
           </p>
           <p>
-            In this premium profile narrative, Mukim Uddin is positioned as a benchmark success figure — someone who blends
-            field intelligence with executive-level strategy, empowers teams with practical frameworks, and consistently turns
-            ambitious targets into repeatable outcomes.
+            Mukim combines on-the-ground familiarity with how deals actually close in Bangladesh and the discipline you
+            need when buyers sit in multiple time zones. Teams get simple frameworks they can run daily—not slide decks—so
+            ambitious targets translate into repeatable execution, not one-off heroics.
           </p>
           <div className="founder-tags">
             <span>Process Architect</span>
@@ -123,23 +126,25 @@ export default function FounderPage() {
       </section>
 
       <section className="founder-block">
-        <h2>Media-Style Narrative (Dummy)</h2>
+        <h2>How the market sees the operation</h2>
         <p>
-          Industry observers describe Mukim Uddin as a "silent execution machine" who turned fragmented sourcing activity
-          into a full-stack operational discipline. His reputation is built on consistency, not hype.
+          People who work with YTM Bangladesh often describe Mukim as low-drama and high-follow-through—someone who took
+          scattered sourcing activity and turned it into a routine: verify, document, hand over, support. In a sector where
+          trust is everything, that consistency matters more than loud marketing.
         </p>
         <p>
-          Under his direction, teams adopted hybrid onboarding channels, risk-aware review checkpoints, and high-frequency
-          reporting standards that elevated delivery confidence among buyers and partners.
+          Under his direction, the team leaned into clear onboarding paths (remote and in-person where needed), staged
+          reviews before money and assets move, and reporting rhythms that keep buyers and partners aligned—especially when
+          deals span Bangladesh and overseas desks.
         </p>
         <p>
-          His core contribution is not only scaling numbers, but building a framework where quality and speed can coexist
-          without operational chaos.
+          The real contribution isn’t only volume; it’s a way of working where speed doesn’t automatically mean cutting
+          corners—because the checkpoints are built into the process, not bolted on after something goes wrong.
         </p>
       </section>
 
       <section className="founder-block">
-        <h2>Vision 2030 (Dummy Strategic Outlook)</h2>
+        <h2>Vision & direction</h2>
         <ul>
           <li>Establish YTM Bangladesh as the most process-reliable channel operations brand in the region.</li>
           <li>Launch advanced compliance and quality intelligence systems for marketplace transparency.</li>

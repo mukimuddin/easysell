@@ -32,6 +32,9 @@ export default function Footer() {
             <li><Link href="/help-center" className="footer-link">Help Center</Link></li>
             <li><Link href="/safety-tips" className="footer-link">Safety Tips</Link></li>
             <li><Link href="/contact-us" className="footer-link">Contact Us</Link></li>
+            <li><Link href="/buyer/login" className="footer-link">Buyer login</Link></li>
+            <li><Link href="/employee/login" className="footer-link">Staff login</Link></li>
+            <li><Link href="/admin/login" className="footer-link">Admin login</Link></li>
           </ul>
         </div>
         

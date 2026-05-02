@@ -95,6 +95,9 @@ export default function JobsPage() {
       </div>
 
       <div className="jobs-actions">
+        <Link href="/jobs/register" className="btn jobs-btn" style={{ fontWeight: 700 }}>
+          Online আবেদন (Register)
+        </Link>
         <Link href="/" className="btn jobs-btn">Back to Home</Link>
         <a href="tel:+8801601315176" className="btn jobs-btn">
           Call Now

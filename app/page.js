@@ -287,12 +287,24 @@ export default function Home() {
           <p style={{ color: 'var(--muted-foreground)', marginBottom: '0.75rem' }}>
             Looking for a scalable YouTube channel supply partner?
           </p>
-          <Link href="/contact-us" className="btn btn-outline">
-            Partner With YTM Bangladesh
-          </Link>
-          <Link href="/help-center" className="btn" style={{ marginLeft: '0.5rem' }}>
-            Read Help Center
-          </Link>
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              justifyContent: 'center',
+              alignItems: 'center',
+              gap: '0.85rem',
+              maxWidth: '420px',
+              margin: '0 auto',
+            }}
+          >
+            <Link href="/contact-us" className="btn btn-outline">
+              Partner With YTM Bangladesh
+            </Link>
+            <Link href="/help-center" className="btn">
+              Read Help Center
+            </Link>
+          </div>
         </div>
       </section>
     </main>

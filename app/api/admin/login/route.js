@@ -7,7 +7,11 @@ export async function POST(request) {
   const ip = request.headers.get('x-forwarded-for') || '127.0.0.1';
   
   try {
-    const { username, password } = await request.json();
+    const { username, password, portal } = await request.json();
+
+    if (portal !== 'admin' && portal !== 'employee') {
+      return NextResponse.json({ error: 'Invalid login request.' }, { status: 400 });
+    }
     
     // 1. Check Rate Limiting
     const [attempts] = await pool.query(
@@ -46,6 +50,29 @@ export async function POST(request) {
     const isValid = await bcrypt.compare(password, user.password);
 
     if (isValid) {
+      if (portal === 'admin' && user.role !== 'admin') {
+        if (attempts.length > 0) {
+          await pool.execute('UPDATE login_attempts SET attempts = attempts + 1 WHERE ip = ?', [ip]);
+        } else {
+          await pool.execute('INSERT INTO login_attempts (ip, attempts) VALUES (?, 1)', [ip]);
+        }
+        return NextResponse.json(
+          { error: 'This account is not an admin. Use staff login from the footer if you are an employee.' },
+          { status: 403 }
+        );
+      }
+      if (portal === 'employee' && user.role !== 'employee') {
+        if (attempts.length > 0) {
+          await pool.execute('UPDATE login_attempts SET attempts = attempts + 1 WHERE ip = ?', [ip]);
+        } else {
+          await pool.execute('INSERT INTO login_attempts (ip, attempts) VALUES (?, 1)', [ip]);
+        }
+        return NextResponse.json(
+          { error: 'This account is not a staff user. Use admin login if you are an administrator.' },
+          { status: 403 }
+        );
+      }
+
       // Success! Clear attempts
       await pool.execute('DELETE FROM login_attempts WHERE ip = ?', [ip]);
 

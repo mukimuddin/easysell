@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { HiMenuAlt3, HiX } from 'react-icons/hi';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
 import { useUI } from '@/components/UIContext';
@@ -17,8 +16,21 @@ export default function ConditionalLayout({ children }) {
   const isAdminLogin = pathname === '/admin/login';
   const isBuyer = pathname.startsWith('/buyer');
   const isBuyerPublic = pathname === '/buyer/login' || pathname === '/buyer/register';
+  const isEmployee = pathname.startsWith('/employee');
+  const isEmployeePublic = pathname === '/employee/login';
   const isPublicPage = !isAdmin || isAdminLogin;
-  const shouldRenderPublicShell = isPublicPage && (!isBuyer || isBuyerPublic);
+  const shouldRenderPublicShell =
+    isPublicPage && (!isBuyer || isBuyerPublic) && (!isEmployee || isEmployeePublic);
+
+  /** No top navbar — only footer (login/register screens; founder page keeps full navbar). */
+  const footerOnlyPaths = [
+    '/admin/login',
+    '/buyer/login',
+    '/buyer/register',
+    '/employee/login',
+  ];
+  const isFooterOnlyPage = footerOnlyPaths.includes(pathname);
+  const showPublicNavbar = shouldRenderPublicShell && !isFooterOnlyPage;
 
   useEffect(() => {
     if (isAdmin) {
@@ -103,6 +115,9 @@ export default function ConditionalLayout({ children }) {
                  <Link href="/admin?tab=buyers" className={`sidebar-link ${currentTab === 'buyers' ? 'active' : ''}`}>
                    Buyer Requests
                  </Link>
+                 <Link href="/admin?tab=recruitment" className={`sidebar-link ${currentTab === 'recruitment' ? 'active' : ''}`}>
+                   Job Applications
+                 </Link>
                  <Link href="/admin?tab=employees" className={`sidebar-link ${currentTab === 'employees' ? 'active' : ''}`}>
                    Staff Details
                  </Link>
@@ -150,7 +165,7 @@ export default function ConditionalLayout({ children }) {
 
   return (
     <>
-      {shouldRenderPublicShell && (
+      {showPublicNavbar && (
         <nav className="navbar">
           <div className="nav-container">
             <Link href="/" className="logo">
@@ -158,7 +173,6 @@ export default function ConditionalLayout({ children }) {
               YTM.
             </Link>
             <div className="nav-links">
-              <Link href="/founder" className="nav-link">Founder</Link>
               <Link href="/jobs" className="nav-link">Jobs</Link>
               <Link href="/help-center" className="nav-link">Help Center</Link>
               <Link href="/contact-us" className="nav-link">Contact</Link>
@@ -166,7 +180,7 @@ export default function ConditionalLayout({ children }) {
           </div>
         </nav>
       )}
-      {shouldRenderPublicShell && <div className="public-nav-spacer" />}
+      {showPublicNavbar && <div className="public-nav-spacer" />}
       <main>
         {children}
       </main>
