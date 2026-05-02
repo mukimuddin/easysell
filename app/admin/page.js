@@ -1084,7 +1084,7 @@ function AdminContent() {
         </div>
       )}
 
-      {showAddBuyer && user.role === 'admin' && (
+      {showAddBuyer && activeTab === 'buyers' && user.role === 'admin' && (
         <div style={{ padding: '0.6rem 0.75rem', border: '1px solid #f1f5f9', borderRadius: '4px', marginBottom: '0.75rem', background: '#f8fafc' }}>
           <form onSubmit={handleAddBuyer} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.5rem', alignItems: 'flex-end' }}>
             <div className="compact-form-group" style={{ marginBottom: 0 }}><label style={{ fontSize: '10px' }}>Full Name</label><input type="text" name="full_name" className="compact-form-control" style={{ fontSize: '11.5px' }} required /></div>
