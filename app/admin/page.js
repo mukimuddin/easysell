@@ -84,6 +84,7 @@ function AdminContent() {
   const [showAddWorker, setShowAddWorker] = useState(false);
   const [showAddSource, setShowAddSource] = useState(false);
   const [showAddAdmin, setShowAddAdmin] = useState(false);
+  const [showAddBuyer, setShowAddBuyer] = useState(false);
   const [activeChannel, setActiveChannel] = useState(null);
   const [editChannel, setEditChannel] = useState(null); 
   const [editWorker, setEditWorker] = useState(null);
@@ -460,6 +461,41 @@ function AdminContent() {
     }
   };
 
+  const handleAddBuyer = async (e) => {
+    e.preventDefault();
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      const formData = new FormData(e.target);
+      const res = await fetch('/api/admin/buyers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fullName: formData.get('full_name'),
+          companyName: formData.get('company_name'),
+          phone: formData.get('phone'),
+          email: formData.get('email'),
+          password: formData.get('password'),
+          status: formData.get('status') || 'approved',
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || 'Failed to create buyer.');
+        return;
+      }
+      toast.success('Buyer account created.');
+      setShowAddBuyer(false);
+      loadData();
+      e.target.reset();
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to create buyer.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleEmployeeBlock = async (adminId, block) => {
     const ok = await showConfirm(
       block
@@ -753,6 +789,11 @@ function AdminContent() {
                      {showAddSource ? 'Cancel' : 'Add Source'}
                    </button>
                  )}
+                 {activeTab === 'buyers' && user.role === 'admin' && (
+                   <button onClick={() => setShowAddBuyer(!showAddBuyer)} className="btn btn-sm btn-approve" style={{ fontSize: '11px' }}>
+                     {showAddBuyer ? 'Cancel' : 'Add Buyer'}
+                   </button>
+                 )}
               </div>
            </div>
         </div>
@@ -1040,6 +1081,28 @@ function AdminContent() {
               <div className="compact-form-group" style={{ marginBottom: 0 }}><label style={{ fontSize: '10px' }}>Pass</label><input type="text" name="password" className="compact-form-control" style={{ fontSize: '11.5px' }} placeholder="Optional" /></div>
               <button type="submit" className="btn btn-sm btn-approve" style={{ height: '28px', fontSize: '11px' }}>List Channel</button>
            </form>
+        </div>
+      )}
+
+      {showAddBuyer && user.role === 'admin' && (
+        <div style={{ padding: '0.6rem 0.75rem', border: '1px solid #f1f5f9', borderRadius: '4px', marginBottom: '0.75rem', background: '#f8fafc' }}>
+          <form onSubmit={handleAddBuyer} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.5rem', alignItems: 'flex-end' }}>
+            <div className="compact-form-group" style={{ marginBottom: 0 }}><label style={{ fontSize: '10px' }}>Full Name</label><input type="text" name="full_name" className="compact-form-control" style={{ fontSize: '11.5px' }} required /></div>
+            <div className="compact-form-group" style={{ marginBottom: 0 }}><label style={{ fontSize: '10px' }}>Company</label><input type="text" name="company_name" className="compact-form-control" style={{ fontSize: '11.5px' }} /></div>
+            <div className="compact-form-group" style={{ marginBottom: 0 }}><label style={{ fontSize: '10px' }}>Phone</label><input type="text" name="phone" className="compact-form-control" style={{ fontSize: '11.5px' }} required /></div>
+            <div className="compact-form-group" style={{ marginBottom: 0 }}><label style={{ fontSize: '10px' }}>Email</label><input type="email" name="email" className="compact-form-control" style={{ fontSize: '11.5px' }} required /></div>
+            <div className="compact-form-group" style={{ marginBottom: 0 }}><label style={{ fontSize: '10px' }}>Password</label><input type="text" name="password" minLength={6} className="compact-form-control" style={{ fontSize: '11.5px' }} required /></div>
+            <div className="compact-form-group" style={{ marginBottom: 0 }}>
+              <label style={{ fontSize: '10px' }}>Initial Status</label>
+              <select name="status" className="compact-form-control" style={{ fontSize: '11.5px' }}>
+                <option value="approved">Approved (instant access)</option>
+                <option value="pending">Pending</option>
+              </select>
+            </div>
+            <button type="submit" disabled={submitting} className="btn btn-sm btn-approve" style={{ height: '28px', fontSize: '11px' }}>
+              {submitting ? 'Creating...' : 'Create Buyer'}
+            </button>
+          </form>
         </div>
       )}
 

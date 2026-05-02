@@ -1,8 +1,14 @@
 import { NextResponse } from 'next/server';
+import bcrypt from 'bcryptjs';
 import pool from '@/lib/db';
 import { verifySession } from '@/lib/session';
 import { cookies } from 'next/headers';
 import { ensureBuyerTable } from '@/lib/buyers';
+import {
+  findEmailConflictAcrossPortal,
+  findPhoneConflictAcrossPortal,
+  normalizeAccountEmail,
+} from '@/lib/crossRoleIdentity';
 
 export async function GET() {
   const token = (await cookies()).get('adminToken')?.value;
@@ -38,6 +44,63 @@ export async function GET() {
     return NextResponse.json(rows);
   } catch (error) {
     console.error('Fetch buyers error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+export async function POST(request) {
+  const token = (await cookies()).get('adminToken')?.value;
+  const session = await verifySession(token);
+
+  if (!session || session.role !== 'admin') {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    await ensureBuyerTable();
+    const { fullName, companyName, phone, email, password, status } = await request.json();
+
+    if (!fullName || !phone || !email || !password) {
+      return NextResponse.json({ error: 'Required fields are missing.' }, { status: 400 });
+    }
+    if (String(password).length < 6) {
+      return NextResponse.json({ error: 'Password must be at least 6 characters.' }, { status: 400 });
+    }
+
+    const normalizedEmail = normalizeAccountEmail(email);
+
+    const emailHit = await findEmailConflictAcrossPortal(normalizedEmail);
+    if (emailHit) {
+      return NextResponse.json({ error: emailHit.message }, { status: 400 });
+    }
+    const phoneHit = await findPhoneConflictAcrossPortal(String(phone).trim());
+    if (phoneHit) {
+      return NextResponse.json({ error: phoneHit.message }, { status: 400 });
+    }
+
+    const hashedPassword = await bcrypt.hash(String(password), 10);
+    const buyerStatus = ['approved', 'pending', 'rejected'].includes(status) ? status : 'approved';
+
+    await pool.execute(
+      `INSERT INTO buyer_accounts (full_name, company_name, phone, email, password, status, reviewed_by, reviewed_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`,
+      [
+        String(fullName).trim(),
+        companyName ? String(companyName).trim() : null,
+        String(phone).trim(),
+        normalizedEmail,
+        hashedPassword,
+        buyerStatus,
+        session.userId,
+      ]
+    );
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    if (error.code === 'ER_DUP_ENTRY') {
+      return NextResponse.json({ error: 'This email is already registered.' }, { status: 400 });
+    }
+    console.error('Create buyer (admin) error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
