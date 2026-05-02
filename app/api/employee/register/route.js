@@ -2,6 +2,11 @@ import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import pool from '@/lib/db';
 import { ensureEmployeeApplicationTable } from '@/lib/employeeApplications';
+import {
+  findEmailConflictAcrossPortal,
+  findPhoneConflictAcrossPortal,
+  normalizeAccountEmail,
+} from '@/lib/crossRoleIdentity';
 
 export async function POST(request) {
   try {
@@ -31,32 +36,17 @@ export async function POST(request) {
     }
 
     const pref = ['online', 'field', 'hybrid'].includes(workPreference) ? workPreference : 'hybrid';
-    const normalizedEmail = String(email).trim().toLowerCase();
+    const normalizedEmail = normalizeAccountEmail(email);
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const [pending] = await pool.query(
-      `SELECT id FROM employee_applications WHERE email = ? AND status = 'pending' LIMIT 1`,
-      [normalizedEmail]
-    );
-    if (pending.length > 0) {
-      return NextResponse.json(
-        { error: 'এই ইমেইল দিয়ে ইতিমধ্যে একটি আবেদন বিচারাধীন আছে।' },
-        { status: 400 }
-      );
+    const emailHit = await findEmailConflictAcrossPortal(normalizedEmail);
+    if (emailHit) {
+      return NextResponse.json({ error: emailHit.message }, { status: 400 });
     }
 
-    const [existingEmp] = await pool.query(
-      `SELECT u.id FROM admin_users u
-       INNER JOIN employee_details ed ON ed.admin_id = u.id
-       WHERE LOWER(TRIM(ed.email)) = ? AND u.role = 'employee'
-       LIMIT 1`,
-      [normalizedEmail]
-    );
-    if (existingEmp.length > 0) {
-      return NextResponse.json(
-        { error: 'এই ইমেইল দিয়ে ইতিমধ্যে কর্মী অ্যাকাউন্ট আছে। লগইন করুন।' },
-        { status: 400 }
-      );
+    const phoneHit = await findPhoneConflictAcrossPortal(String(phone).trim());
+    if (phoneHit) {
+      return NextResponse.json({ error: phoneHit.message }, { status: 400 });
     }
 
     await pool.execute(

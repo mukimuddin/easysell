@@ -3,6 +3,11 @@ import pool from '@/lib/db';
 import { verifySession } from '@/lib/session';
 import { cookies } from 'next/headers';
 import { ensureAdminBlockedColumn } from '@/lib/adminBlocked';
+import {
+  findEmailConflictAcrossPortal,
+  findPhoneConflictAcrossPortal,
+  normalizeAccountEmail,
+} from '@/lib/crossRoleIdentity';
 
 export async function GET(request) {
   const token = (await cookies()).get('adminToken')?.value;
@@ -102,6 +107,29 @@ export async function POST(request) {
        if (f === 'contract_target') return parseInt(val) || 0;
        return val;
     });
+
+    const emailIdx = updatedFields.indexOf('email');
+    if (emailIdx !== -1) {
+      const em = normalizeAccountEmail(values[emailIdx] || '');
+      if (em) {
+        const emailHit = await findEmailConflictAcrossPortal(em, { excludeEmployeeAdminId: admin_id });
+        if (emailHit) {
+          return NextResponse.json({ error: emailHit.message }, { status: 400 });
+        }
+      }
+    }
+    const phoneIdx = updatedFields.indexOf('phone');
+    if (phoneIdx !== -1) {
+      const ph = values[phoneIdx];
+      if (ph != null && String(ph).trim() !== '') {
+        const phoneHit = await findPhoneConflictAcrossPortal(String(ph), {
+          excludeEmployeeAdminId: admin_id,
+        });
+        if (phoneHit) {
+          return NextResponse.json({ error: phoneHit.message }, { status: 400 });
+        }
+      }
+    }
 
     const query = `
       INSERT INTO employee_details (

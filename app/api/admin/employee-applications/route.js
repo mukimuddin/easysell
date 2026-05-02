@@ -3,6 +3,7 @@ import pool from '@/lib/db';
 import { verifySession } from '@/lib/session';
 import { cookies } from 'next/headers';
 import { ensureEmployeeApplicationTable } from '@/lib/employeeApplications';
+import { findEmailConflictAcrossPortal, findPhoneConflictAcrossPortal } from '@/lib/crossRoleIdentity';
 
 function generateEmpUsername() {
   const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
@@ -111,11 +112,27 @@ export async function PATCH(request) {
       username = generateEmpUsername();
     }
 
+    const em = String(app.email).trim().toLowerCase();
+
+    const emailHit = await findEmailConflictAcrossPortal(em, { excludeApplicationId: Number(id) });
+    if (emailHit) {
+      await conn.rollback();
+      return NextResponse.json({ error: emailHit.message }, { status: 400 });
+    }
+
+    const phoneHit = await findPhoneConflictAcrossPortal(app.phone || '', {
+      excludeApplicationId: Number(id),
+    });
+    if (phoneHit) {
+      await conn.rollback();
+      return NextResponse.json({ error: phoneHit.message }, { status: 400 });
+    }
+
     const [dup] = await conn.query(
       `SELECT u.id FROM admin_users u
        INNER JOIN employee_details ed ON ed.admin_id = u.id
        WHERE LOWER(TRIM(ed.email)) = ? LIMIT 1`,
-      [String(app.email).toLowerCase()]
+      [em]
     );
     if (dup.length > 0) {
       await conn.rollback();

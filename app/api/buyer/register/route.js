@@ -2,6 +2,11 @@ import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import pool from '@/lib/db';
 import { ensureBuyerTable } from '@/lib/buyers';
+import {
+  findEmailConflictAcrossPortal,
+  findPhoneConflictAcrossPortal,
+  normalizeAccountEmail,
+} from '@/lib/crossRoleIdentity';
 
 export async function POST(request) {
   try {
@@ -17,7 +22,18 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Password must be at least 6 characters.' }, { status: 400 });
     }
 
-    const normalizedEmail = String(email).trim().toLowerCase();
+    const normalizedEmail = normalizeAccountEmail(email);
+
+    const emailHit = await findEmailConflictAcrossPortal(normalizedEmail);
+    if (emailHit) {
+      return NextResponse.json({ error: emailHit.message }, { status: 400 });
+    }
+
+    const phoneHit = await findPhoneConflictAcrossPortal(String(phone).trim());
+    if (phoneHit) {
+      return NextResponse.json({ error: phoneHit.message }, { status: 400 });
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
     await pool.execute(

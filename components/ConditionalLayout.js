@@ -215,7 +215,6 @@ export default function ConditionalLayout({ children }) {
             <div className="nav-links">
               <Link href="/jobs" className="nav-link">Jobs</Link>
               <Link href="/help-center" className="nav-link">Help Center</Link>
-              <Link href="/contact-us" className="nav-link">Contact</Link>
             </div>
           </div>
         </nav>

@@ -2,6 +2,11 @@ import { NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { verifySession } from '@/lib/session';
 import { cookies } from 'next/headers';
+import {
+  assertChannelLinkAllowed,
+  assertChannelGmailUnique,
+  ChannelGuardError,
+} from '@/lib/channelSubmitGuards';
 
 export async function GET() {
   const token = (await cookies()).get('adminToken')?.value;
@@ -30,7 +35,7 @@ export async function GET() {
       query += ` WHERE c.created_by = ?`;
       params.push(session.userId);
     }
-    
+
     query += ` ORDER BY c.created_at DESC`;
 
     const [rows] = await pool.query(query, params);
@@ -49,25 +54,38 @@ export async function POST(request) {
   }
 
   try {
-    const { channel_name, channel_link, whatsapp, worker_id, open_date, sell_price, worker_cost, gmail, password } = await request.json();
-    
+    const { channel_name, channel_link, whatsapp, worker_id, open_date, sell_price, worker_cost, gmail, password } =
+      await request.json();
+
     if (!channel_name || !channel_link) {
       return NextResponse.json({ error: 'Name and Link are required' }, { status: 400 });
     }
 
-
+    const { canonUrl } = await assertChannelLinkAllowed(pool, String(channel_link).trim());
+    await assertChannelGmailUnique(pool, gmail || null);
 
     const [result] = await pool.execute(
       'INSERT INTO channels (channel_name, channel_link, whatsapp, worker_id, open_date, sell_price, worker_cost, created_by, gmail, password) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [channel_name, channel_link, whatsapp || null, worker_id || null, open_date || null, sell_price || 0, worker_cost || 0, session.userId, gmail || null, password || null]
+      [
+        channel_name,
+        canonUrl,
+        whatsapp || null,
+        worker_id || null,
+        open_date || null,
+        sell_price || 0,
+        worker_cost || 0,
+        session.userId,
+        gmail || null,
+        password || null,
+      ]
     );
-
 
     return NextResponse.json({ success: true, id: result.insertId });
   } catch (error) {
-
+    if (error instanceof ChannelGuardError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode });
+    }
     console.error('Error creating channel:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
-

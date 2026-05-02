@@ -3,6 +3,11 @@ import pool from '@/lib/db';
 import { verifySession } from '@/lib/session';
 import { cookies } from 'next/headers';
 import { emitEvent } from '@/lib/socket';
+import {
+  assertChannelLinkAllowed,
+  assertChannelGmailUnique,
+  ChannelGuardError,
+} from '@/lib/channelSubmitGuards';
 
 export async function PATCH(request, context) {
   const { id } = await context.params;
@@ -16,8 +21,23 @@ export async function PATCH(request, context) {
     const data = await request.json();
     const fields = [];
     const params = [];
+    const channelIdNum = Number(id);
 
-    // ... (rest of the fields logic)
+    let canonLinkReplace;
+    if (data.channel_link !== undefined) {
+      const { canonUrl } = await assertChannelLinkAllowed(pool, String(data.channel_link).trim(), {
+        excludeChannelId: channelIdNum,
+      });
+      canonLinkReplace = canonUrl;
+      fields.push('channel_link = ?');
+      params.push(canonLinkReplace);
+    }
+
+    if (data.gmail !== undefined) {
+      await assertChannelGmailUnique(pool, data.gmail, { excludeChannelId: channelIdNum });
+      fields.push('gmail = ?');
+      params.push(data.gmail || null);
+    }
 
     if (data.is_selected !== undefined) {
       fields.push('is_selected = ?');
@@ -39,10 +59,6 @@ export async function PATCH(request, context) {
       fields.push('channel_name = ?');
       params.push(data.channel_name);
     }
-    if (data.channel_link !== undefined) {
-      fields.push('channel_link = ?');
-      params.push(data.channel_link);
-    }
     if (data.worker_id !== undefined) {
       fields.push('worker_id = ?');
       params.push(data.worker_id || null);
@@ -51,15 +67,10 @@ export async function PATCH(request, context) {
       fields.push('open_date = ?');
       params.push(data.open_date || null);
     }
-    if (data.gmail !== undefined) {
-      fields.push('gmail = ?');
-      params.push(data.gmail || null);
-    }
     if (data.password !== undefined) {
       fields.push('password = ?');
       params.push(data.password || null);
     }
-
 
     if (fields.length === 0) {
       return NextResponse.json({ error: 'No fields to update' }, { status: 400 });
@@ -80,11 +91,13 @@ export async function PATCH(request, context) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    if (error instanceof ChannelGuardError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode });
+    }
     console.error('Error updating channel:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
-
 
 export async function DELETE(request, context) {
   const { id } = await context.params;
@@ -110,4 +123,3 @@ export async function DELETE(request, context) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
-

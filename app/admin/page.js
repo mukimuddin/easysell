@@ -10,11 +10,12 @@ import {
 } from 'react-icons/hi';
 import { getSocket } from '@/lib/socket';
 import { useUI } from '@/components/UIContext';
-import { 
+import {
   ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend,
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
   LineChart, Line, AreaChart, Area
 } from 'recharts';
+import { normalizeUrlForPaste } from '@/lib/youtubeChannelUrl';
 
 const getTimeAgo = (date) => {
   if (!date) return null;
@@ -561,6 +562,11 @@ function AdminContent() {
   const handleAddChannel = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
+    const linkCheck = normalizeUrlForPaste(String(formData.get('channel_link') || ''));
+    if (!linkCheck.ok) {
+      toast.error(linkCheck.error || 'Invalid YouTube channel link.');
+      return;
+    }
     const res = await fetch('/api/admin/channels', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -573,7 +579,18 @@ function AdminContent() {
         password: formData.get('password')
       }),
     });
-    if (res.ok) { setShowAddChannel(false); loadData(); e.target.reset(); }
+    if (res.ok) {
+      setShowAddChannel(false);
+      loadData();
+      e.target.reset();
+    } else {
+      try {
+        const err = await res.json();
+        toast.error(err?.error || 'Could not save channel.');
+      } catch {
+        toast.error('Could not save channel.');
+      }
+    }
   };
 
   const handleAddDailyUpdate = async (e) => {
@@ -630,6 +647,11 @@ function AdminContent() {
   const handleEditChannel = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
+    const linkCheck = normalizeUrlForPaste(String(formData.get('channel_link') || ''));
+    if (!linkCheck.ok) {
+      toast.error(linkCheck.error || 'Invalid YouTube channel link.');
+      return;
+    }
     const res = await fetch(`/api/admin/channels/${editChannel.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -642,7 +664,17 @@ function AdminContent() {
         password: formData.get('password')
       }),
     });
-    if (res.ok) { setEditChannel(null); loadData(); }
+    if (res.ok) {
+      setEditChannel(null);
+      loadData();
+    } else {
+      try {
+        const err = await res.json();
+        toast.error(err?.error || 'Update failed.');
+      } catch {
+        toast.error('Update failed.');
+      }
+    }
   };
 
   const handleToggle = async (id, status) => {

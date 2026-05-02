@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { verifySession } from '@/lib/session';
 import { cookies } from 'next/headers';
+import { normalizeWhatsappForLookup } from '@/lib/whatsappNormalize';
 
 export async function GET() {
   const token = (await cookies()).get('adminToken')?.value;
@@ -43,14 +44,20 @@ export async function POST(request) {
 
   try {
     const { name, whatsapp } = await request.json();
-    
+
     if (!name) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
     }
 
+    let waStored = whatsapp ? String(whatsapp).trim() : '';
+    const canonWa = normalizeWhatsappForLookup(waStored);
+    if (/^01\d{9}$/.test(canonWa)) {
+      waStored = canonWa;
+    }
+
     const [result] = await pool.execute(
       'INSERT INTO workers (name, whatsapp, created_by) VALUES (?, ?, ?)',
-      [name, whatsapp || null, session.userId]
+      [name, waStored || null, session.userId]
     );
 
 

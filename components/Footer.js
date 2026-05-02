@@ -23,6 +23,8 @@ export default function Footer() {
             <li><Link href="/" className="footer-link">Browse Channels</Link></li>
             <li><Link href="/founder" className="footer-link">Founder Profile</Link></li>
             <li><Link href="/jobs" className="footer-link">Careers</Link></li>
+            <li><Link href="/workers/submit" className="footer-link">চ্যানেল জমা (ওয়ার্কার)</Link></li>
+            <li><Link href="/workers/find-channels" className="footer-link">আপনার চ্যানেলগুলো খুঁজুন</Link></li>
           </ul>
         </div>
         
