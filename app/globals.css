@@ -551,7 +551,26 @@ main { flex: 1; }
   border-color: rgba(226, 232, 240, 1);
   background: #ffffff;
 }
+:root {
+  /* Navbar fixed stack + spacer; matches .public-nav-spacer breakpoints */
+  --public-nav-stack: 74px;
+}
+
 .public-nav-spacer { height: 74px; }
+
+/** Like login shells: tall main column so footer sits just below viewport (small scroll). */
+.public-page-fill-viewport-footer {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/** When top navbar + spacer visible (see ConditionalLayout). */
+.public-page-fill-below-navbar {
+  min-height: calc(100vh - var(--public-nav-stack));
+  display: flex;
+  flex-direction: column;
+}
 
 /* Buttons */
 .btn {
@@ -1088,6 +1107,9 @@ tr:hover { background-color: rgba(0,0,0,0.01); }
 .footer-socials { display: flex; gap: 1rem; align-items: center; }
 
 @media (max-width: 768px) {
+  :root {
+    --public-nav-stack: 86px;
+  }
   .hero h1 { font-size: 2.25rem; }
   .section-title { font-size: 1.25rem; }
   .navbar {

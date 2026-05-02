@@ -63,7 +63,7 @@ export default function JobRegisterPage() {
   };
 
   return (
-    <main className="common-container" style={{ paddingTop: '1.25rem', paddingBottom: '2rem', maxWidth: '520px' }}>
+    <main className="common-container public-page-fill-below-navbar" style={{ paddingTop: '1.25rem', paddingBottom: '2rem', maxWidth: '520px' }}>
       <div style={{ marginBottom: '1rem' }}>
         <div style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--muted-foreground)', fontWeight: 700, letterSpacing: '0.06em' }}>
           Job Circular · Online আবেদন

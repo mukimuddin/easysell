@@ -53,7 +53,7 @@ export default function FindWorkerChannelsPage() {
 
   return (
     <main
-      className="common-container worker-find-channels-page"
+      className="common-container worker-find-channels-page public-page-fill-below-navbar"
       style={{ maxWidth: '820px', paddingTop: '1rem', paddingBottom: '2.5rem' }}
     >
       <div style={{ marginBottom: '1rem' }}>

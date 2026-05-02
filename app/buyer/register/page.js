@@ -46,7 +46,15 @@ export default function BuyerRegisterPage() {
   };
 
   return (
-    <main style={{ display: 'flex', justifyContent: 'center', padding: '2rem 1rem' }}>
+    <main
+      className="public-page-fill-viewport-footer"
+      style={{
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: '2rem 1rem',
+        background: '#ffffff',
+      }}
+    >
       <div style={{ width: '100%', maxWidth: '420px', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '1rem' }}>
         <h1 style={{ fontSize: '1.2rem', marginBottom: '0.3rem' }}>Buyer Registration</h1>
         <p style={{ fontSize: '12px', color: '#64748b', marginBottom: '1rem' }}>Submit your details. Admin will approve your account.</p>

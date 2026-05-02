@@ -168,7 +168,7 @@ export default function PublicWorkerSubmitPage() {
   );
 
   return (
-    <main className="common-container worker-submit-page" style={{ maxWidth: '560px', paddingTop: '1rem', paddingBottom: '2.5rem' }}>
+    <main className="common-container worker-submit-page public-page-fill-below-navbar" style={{ maxWidth: '560px', paddingTop: '1rem', paddingBottom: '2.5rem' }}>
       <div style={{ marginBottom: '1rem' }}>
         <div style={{ fontSize: '10px', textTransform: 'uppercase', color: 'var(--muted-foreground)', fontWeight: 700, letterSpacing: '0.08em' }}>
           Specialist onboarding
