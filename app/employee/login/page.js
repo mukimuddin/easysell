@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { markAdminTabSession } from '@/lib/tabSession';
 
 export default function EmployeeLogin() {
   const [username, setUsername] = useState('');
@@ -22,6 +23,7 @@ export default function EmployeeLogin() {
 
       const data = await res.json();
       if (res.ok) {
+        markAdminTabSession();
         window.location.href = '/admin';
       } else {
         setError(data.error || 'ভুল ইউজারনেম বা পাসওয়ার্ড');

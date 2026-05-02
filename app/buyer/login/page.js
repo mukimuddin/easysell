@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { markBuyerTabSession } from '@/lib/tabSession';
 import Link from 'next/link';
 import { HiKey, HiPlus } from 'react-icons/hi';
 
@@ -25,6 +26,7 @@ export default function BuyerLoginPage() {
         setError(data.error || 'Invalid credentials');
         return;
       }
+      markBuyerTabSession();
       window.location.href = '/buyer';
     } catch (err) {
       setError('An error occurred during login.');

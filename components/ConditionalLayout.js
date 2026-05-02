@@ -4,6 +4,9 @@ import { useEffect, useState } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
+import { AdminTabSessionGuard, BuyerTabSessionGuard } from '@/components/TabSessionGuard';
+import { clearAdminTabSession } from '@/lib/tabSession';
+import { getSocket } from '@/lib/socket';
 import { useUI } from '@/components/UIContext';
 
 export default function ConditionalLayout({ children }) {
@@ -35,15 +38,45 @@ export default function ConditionalLayout({ children }) {
   useEffect(() => {
     if (isAdmin) {
       fetch('/api/admin/me')
-        .then(res => res.json())
-        .then(data => setUser(data))
+        .then((res) => (res.ok ? res.json() : Promise.reject()))
+        .then((data) => setUser(data))
         .catch(() => setUser(null));
+    } else {
+      setUser(null);
     }
   }, [isAdmin]);
 
   useEffect(() => {
     setIsSidebarOpen(false);
   }, [pathname, searchParams]);
+
+  useEffect(() => {
+    if (!pathname.startsWith('/admin') || pathname === '/admin/login' || !user?.userId) {
+      return undefined;
+    }
+    const socket = getSocket();
+    if (!socket) return undefined;
+
+    const kick = () => {
+      clearAdminTabSession();
+      fetch('/api/admin/logout', { method: 'POST' })
+        .catch(() => {})
+        .finally(() => {
+          window.location.replace('/admin/login');
+        });
+    };
+
+    const onBlocked = (data) => {
+      if (data && Number(data.userId) === Number(user.userId)) {
+        kick();
+      }
+    };
+
+    socket.on('staff-blocked', onBlocked);
+    return () => {
+      socket.off('staff-blocked', onBlocked);
+    };
+  }, [pathname, user?.userId]);
 
   if (isAdmin && !isAdminLogin) {
     if (!user) return (
@@ -64,6 +97,7 @@ export default function ConditionalLayout({ children }) {
     const currentTab = searchParams.get('tab') || 'dashboard';
 
     return (
+      <AdminTabSessionGuard>
       <div className={`admin-layout ${isSidebarOpen ? 'sidebar-expanded' : ''}`}>
         {/* Simple Minimal Mobile Header */}
         <header className="admin-mobile-header">
@@ -141,6 +175,7 @@ export default function ConditionalLayout({ children }) {
                onClick={async () => {
                   if (await showConfirm('Logout?')) {
                     await fetch('/api/admin/logout', { method: 'POST' });
+                    clearAdminTabSession();
                     window.location.href = '/admin/login';
                   }
                }}
@@ -156,11 +191,16 @@ export default function ConditionalLayout({ children }) {
           {children}
         </main>
       </div>
+      </AdminTabSessionGuard>
     );
   }
 
   if (isBuyer && !isBuyerPublic) {
-    return <main>{children}</main>;
+    return (
+      <BuyerTabSessionGuard>
+        <main>{children}</main>
+      </BuyerTabSessionGuard>
+    );
   }
 
   return (

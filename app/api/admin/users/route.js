@@ -4,6 +4,8 @@ import { verifySession } from '@/lib/session';
 import { cookies } from 'next/headers';
 import bcrypt from 'bcryptjs';
 import { randomBytes } from 'node:crypto';
+import { emitEvent } from '@/lib/socket';
+import { ensureAdminBlockedColumn } from '@/lib/adminBlocked';
 
 export async function GET() {
   const token = (await cookies()).get('adminToken')?.value;
@@ -97,20 +99,56 @@ export async function PATCH(request) {
   }
 
   try {
-    const { id, newPassword, generate } = await request.json();
+    const body = await request.json();
+    const { id, is_blocked } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'ID required' }, { status: 400 });
     }
 
-    const [users] = await pool.query(
+    const targetId = parseInt(id, 10);
+
+    if (typeof is_blocked === 'boolean') {
+      await ensureAdminBlockedColumn();
+      if (targetId === session.userId) {
+        return NextResponse.json({ error: 'You cannot block your own account' }, { status: 400 });
+      }
+
+      const [users] = await pool.query(
+        'SELECT id, role FROM admin_users WHERE id = ? LIMIT 1',
+        [targetId]
+      );
+      if (users.length === 0) {
+        return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      }
+      if (users[0].role !== 'employee') {
+        return NextResponse.json({ error: 'Only staff (employee) accounts can be blocked' }, { status: 400 });
+      }
+
+      await pool.execute('UPDATE admin_users SET is_blocked = ? WHERE id = ?', [
+        is_blocked ? 1 : 0,
+        targetId,
+      ]);
+
+      if (is_blocked) {
+        emitEvent('staff-blocked', { userId: targetId });
+      } else {
+        emitEvent('staff-unblocked', { userId: targetId });
+      }
+
+      return NextResponse.json({ success: true, is_blocked });
+    }
+
+    const { newPassword, generate } = body;
+
+    const [usersPwd] = await pool.query(
       'SELECT id, role FROM admin_users WHERE id = ? LIMIT 1',
-      [id]
+      [targetId]
     );
-    if (users.length === 0) {
+    if (usersPwd.length === 0) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
-    if (users[0].role !== 'employee') {
+    if (usersPwd[0].role !== 'employee') {
       return NextResponse.json({ error: 'Only employee password can be managed here' }, { status: 400 });
     }
 
@@ -123,7 +161,7 @@ export async function PATCH(request) {
     }
 
     const hashedPassword = await bcrypt.hash(plainPassword, 10);
-    await pool.execute('UPDATE admin_users SET password = ? WHERE id = ?', [hashedPassword, id]);
+    await pool.execute('UPDATE admin_users SET password = ? WHERE id = ?', [hashedPassword, targetId]);
 
     return NextResponse.json({
       success: true,

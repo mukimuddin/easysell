@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createSession } from '@/lib/session';
 import pool from '@/lib/db';
 import bcrypt from 'bcryptjs';
+import { ensureAdminBlockedColumn, isAdminUserBlocked } from '@/lib/adminBlocked';
 
 export async function POST(request) {
   const ip = request.headers.get('x-forwarded-for') || '127.0.0.1';
@@ -50,6 +51,19 @@ export async function POST(request) {
     const isValid = await bcrypt.compare(password, user.password);
 
     if (isValid) {
+      await ensureAdminBlockedColumn();
+      if (await isAdminUserBlocked(user.id)) {
+        if (attempts.length > 0) {
+          await pool.execute('UPDATE login_attempts SET attempts = attempts + 1 WHERE ip = ?', [ip]);
+        } else {
+          await pool.execute('INSERT INTO login_attempts (ip, attempts) VALUES (?, 1)', [ip]);
+        }
+        return NextResponse.json(
+          { error: 'This account is blocked. Contact an administrator.' },
+          { status: 403 }
+        );
+      }
+
       if (portal === 'admin' && user.role !== 'admin') {
         if (attempts.length > 0) {
           await pool.execute('UPDATE login_attempts SET attempts = attempts + 1 WHERE ip = ?', [ip]);

@@ -125,12 +125,15 @@ export async function PATCH(request) {
       );
     }
 
-    const [insertResult] = await conn.execute(
-      `INSERT INTO admin_users (username, password, role) VALUES (?, ?, 'employee')`,
-      [username, app.password]
+    const [maxIdRows] = await conn.query(
+      'SELECT COALESCE(MAX(id), 0) AS maxId FROM admin_users'
     );
+    const adminId = (Number(maxIdRows[0]?.maxId) || 0) + 1;
 
-    const adminId = insertResult.insertId;
+    await conn.execute(
+      `INSERT INTO admin_users (id, username, password, role) VALUES (?, ?, ?, ?)`,
+      [adminId, username, app.password, 'employee']
+    );
 
     await conn.execute(
       `INSERT INTO employee_details (admin_id, full_name, phone, email)

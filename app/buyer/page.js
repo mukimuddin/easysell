@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { clearBuyerTabSession } from '@/lib/tabSession';
 import { HiCube, HiRefresh, HiSearch, HiX } from 'react-icons/hi';
 
 export default function BuyerPanelPage() {
@@ -127,6 +128,7 @@ export default function BuyerPanelPage() {
               className="btn btn-sm btn-outline"
               onClick={async () => {
                 await fetch('/api/buyer/logout', { method: 'POST' });
+                clearBuyerTabSession();
                 window.location.href = '/buyer/login';
               }}
               style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.5rem', fontSize: '11px', lineHeight: 1 }}

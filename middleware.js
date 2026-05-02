@@ -1,9 +1,23 @@
 import { NextResponse } from 'next/server';
 import { verifySession } from './lib/session';
 
+function clearAdminTokenCookie(response) {
+  response.cookies.set('adminToken', '', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 0,
+    path: '/',
+    sameSite: 'lax',
+  });
+}
+
 export async function middleware(request) {
   const path = request.nextUrl.pathname;
-  
+
+  if (path === '/api/admin/session-check') {
+    return NextResponse.next();
+  }
+
   if (path.startsWith('/admin') || path.startsWith('/api/admin')) {
     // allow access to login routes
     if (path === '/admin/login' || path === '/api/admin/login') {
@@ -24,6 +38,26 @@ export async function middleware(request) {
         return NextResponse.json({ error: 'Unauthorized Access' }, { status: 401 });
       }
       return NextResponse.redirect(new URL('/admin/login', request.url));
+    }
+
+    const origin = request.nextUrl.origin;
+    try {
+      const sr = await fetch(new URL('/api/admin/session-check', origin), {
+        headers: { cookie: request.headers.get('cookie') || '' },
+        cache: 'no-store',
+      });
+      if (sr.status === 403) {
+        if (path.startsWith('/api/')) {
+          const res = NextResponse.json({ error: 'Account blocked' }, { status: 403 });
+          clearAdminTokenCookie(res);
+          return res;
+        }
+        const res = NextResponse.redirect(new URL('/admin/login', request.url));
+        clearAdminTokenCookie(res);
+        return res;
+      }
+    } catch (e) {
+      console.error('middleware session-check', e);
     }
   }
 

@@ -1357,6 +1357,28 @@ tr:hover { background-color: rgba(0,0,0,0.01); }
 .compact-table tr:last-child td { border-bottom: none; }
 .compact-table tr:hover td { background: #f8fafc; }
 
+/* Job applications: wide viewport = table; narrower = cards (no horizontal table scroll) */
+.recruitment-dual-layout .recruitment-cards-only-sm {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+  padding: 0.2rem 0;
+}
+
+.recruitment-dual-layout .recruitment-table-only-lg {
+  display: none;
+}
+
+@media (min-width: 1200px) {
+  .recruitment-dual-layout .recruitment-cards-only-sm {
+    display: none !important;
+  }
+
+  .recruitment-dual-layout .recruitment-table-only-lg {
+    display: block !important;
+  }
+}
+
 /* High-Density Mobile List (Minimalist Replacement) */
 @media (max-width: 768px) {
   .admin-layout { flex-direction: column; }

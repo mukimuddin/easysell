@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { verifySession } from '@/lib/session';
 import { cookies } from 'next/headers';
+import { ensureAdminBlockedColumn } from '@/lib/adminBlocked';
 
 export async function GET(request) {
   const token = (await cookies()).get('adminToken')?.value;
@@ -15,9 +16,10 @@ export async function GET(request) {
   const isMe = searchParams.get('me') === 'true';
 
   try {
+    await ensureAdminBlockedColumn();
     if (isMe) {
       const [rows] = await pool.query(`
-        SELECT u.id as admin_id, u.username, u.role, 
+        SELECT u.id as admin_id, u.username, u.role, COALESCE(u.is_blocked, 0) as is_blocked,
                ed.full_name, ed.father_name, ed.mother_name, ed.phone, ed.email,
                ed.present_address, ed.permanent_address, ed.dob, ed.nid_no,
                ed.joining_date, ed.designation, ed.basic_salary, ed.contract_target, ed.bank_name,
@@ -35,7 +37,7 @@ export async function GET(request) {
     }
 
     const [rows] = await pool.query(`
-      SELECT u.id as admin_id, u.username, u.role,
+      SELECT u.id as admin_id, u.username, u.role, COALESCE(u.is_blocked, 0) as is_blocked,
              ed.full_name, ed.father_name, ed.mother_name, ed.phone, ed.email,
              ed.present_address, ed.permanent_address, ed.dob, ed.nid_no,
              ed.joining_date, ed.designation, ed.basic_salary, ed.contract_target, ed.bank_name,

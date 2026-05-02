@@ -6,7 +6,7 @@ import {
   HiKey, HiPlus, HiRefresh, HiPencilAlt, 
   HiOutlineTrash, HiChartBar, HiX, HiMenu,
   HiTrendingUp, HiUsers, HiCube, HiCurrencyDollar, HiFire, HiStar, HiOutlineClipboardCopy,
-  HiEye, HiEyeOff, HiCheck
+  HiEye, HiEyeOff, HiCheck, HiLockClosed, HiLockOpen
 } from 'react-icons/hi';
 import { getSocket } from '@/lib/socket';
 import { useUI } from '@/components/UIContext';
@@ -456,6 +456,32 @@ function AdminContent() {
     } catch (err) {
       console.error(err);
       toast.error('Failed to update buyer.');
+    }
+  };
+
+  const handleEmployeeBlock = async (adminId, block) => {
+    const ok = await showConfirm(
+      block
+        ? 'Block this staff member? They will be logged out immediately and cannot sign in until unblocked.'
+        : 'Unblock this staff member? They will be able to sign in again.'
+    );
+    if (!ok) return;
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: adminId, is_blocked: block }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || 'Update failed.');
+        return;
+      }
+      toast.success(block ? 'Staff blocked.' : 'Staff unblocked.');
+      loadData();
+    } catch (err) {
+      console.error(err);
+      toast.error('Request failed.');
     }
   };
 
@@ -1157,7 +1183,155 @@ function AdminContent() {
 
       {['monitoring', 'channels', 'sales', 'workers', 'sources', 'admins', 'employees', 'buyers', 'recruitment', 'sell'].includes(activeTab) && !editEmployee && (
         <div className="compact-table-wrapper">
-          {activeTab !== 'sell' && (
+          {activeTab === 'recruitment' && user.role === 'admin' ? (
+            <div className="recruitment-dual-layout">
+            <div className="recruitment-cards-only-sm recruitment-app-cards">
+              {employeeApplications.map((row) => (
+                <article
+                  key={row.id}
+                  style={{
+                    border: '1px solid var(--adm-border, #e2e8f0)',
+                    borderRadius: '8px',
+                    padding: '0.5rem 0.65rem',
+                    background: '#fff',
+                    display: 'grid',
+                    gap: '0.35rem',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
+                    <div style={{ fontWeight: 700, fontSize: '12.5px', lineHeight: 1.25 }}>{row.full_name}</div>
+                    <div
+                      style={{
+                        fontSize: '9px',
+                        fontWeight: 800,
+                        letterSpacing: '0.04em',
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        flexShrink: 0,
+                        background: row.status === 'pending' ? '#fef9c3' : row.status === 'approved' ? '#dcfce7' : '#fee2e2',
+                        color: row.status === 'pending' ? '#854d0e' : row.status === 'approved' ? '#166534' : '#991b1b',
+                      }}
+                    >
+                      {row.status?.toUpperCase()}
+                    </div>
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#64748b', display: 'grid', gap: '2px' }}>
+                    <span><strong style={{ color: '#475569' }}>Phone</strong> {row.phone}</span>
+                    <span style={{ wordBreak: 'break-all' }}><strong style={{ color: '#475569' }}>Email</strong> {row.email}</span>
+                    <span><strong style={{ color: '#475569' }}>Mode</strong> {row.work_preference}</span>
+                    <span style={{ fontFamily: 'ui-monospace, monospace', fontSize: '10px' }}>
+                      <strong style={{ color: '#475569' }}>Circular</strong> {row.job_reference || '—'}
+                    </span>
+                    {row.assigned_username ? (
+                      <span style={{ fontFamily: 'ui-monospace, monospace', fontSize: '10px' }}>
+                        <strong style={{ color: '#475569' }}>Username</strong> {row.assigned_username}
+                      </span>
+                    ) : null}
+                  </div>
+                  {row.status === 'pending' ? (
+                    <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', marginTop: '0.1rem' }}>
+                      <button
+                        type="button"
+                        onClick={() => handleJobApplicationDecision(row.id, 'approved')}
+                        className="btn btn-sm btn-approve"
+                        style={{ flex: '1 1 118px', fontSize: '11px', minHeight: '30px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.2rem' }}
+                      >
+                        <HiCheck /> Approve
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleJobApplicationDecision(row.id, 'rejected')}
+                        className="btn btn-sm btn-reject"
+                        style={{ flex: '1 1 118px', fontSize: '11px', minHeight: '30px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.2rem' }}
+                      >
+                        <HiX /> Reject
+                      </button>
+                    </div>
+                  ) : null}
+                </article>
+              ))}
+              {employeeApplications.length === 0 ? (
+                <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '2rem', color: '#94a3b8', fontSize: '12.5px' }}>
+                  No job applications yet.
+                </div>
+              ) : null}
+            </div>
+            <div className="recruitment-table-only-lg">
+              <div className="table-responsive">
+                <table className="compact-table">
+                  <thead>
+                    <tr>
+                      <th>SL.</th>
+                      <th>Name</th>
+                      <th>Phone</th>
+                      <th>Email</th>
+                      <th>Mode</th>
+                      <th>Circular</th>
+                      <th>Status</th>
+                      <th>Username</th>
+                      <th style={{ textAlign: 'right' }}>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {employeeApplications.map((row, idx) => (
+                      <tr key={row.id}>
+                        <td>{idx + 1}</td>
+                        <td><div style={{ fontWeight: 600, fontSize: '12px' }}>{row.full_name}</div></td>
+                        <td><div style={{ fontSize: '12px' }}>{row.phone}</div></td>
+                        <td><div style={{ fontSize: '12px' }}>{row.email}</div></td>
+                        <td><div style={{ fontSize: '11px', textTransform: 'uppercase', fontWeight: 600 }}>{row.work_preference}</div></td>
+                        <td><div style={{ fontSize: '11px', fontFamily: 'monospace' }}>{row.job_reference || '—'}</div></td>
+                        <td>
+                          <div style={{ fontSize: '11px', fontWeight: 700, color: row.status === 'approved' ? '#059669' : row.status === 'rejected' ? '#dc2626' : '#b45309' }}>
+                            {row.status?.toUpperCase()}
+                          </div>
+                        </td>
+                        <td>
+                          <div style={{ fontSize: '11px', fontWeight: 600, fontFamily: 'monospace' }}>
+                            {row.assigned_username || '—'}
+                          </div>
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
+                          {row.status === 'pending' ? (
+                            <div className="manage-actions">
+                              <button
+                                type="button"
+                                onClick={() => handleJobApplicationDecision(row.id, 'approved')}
+                                className="btn btn-sm btn-approve"
+                                title="Approve"
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}
+                              >
+                                <HiCheck /> Approve
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleJobApplicationDecision(row.id, 'rejected')}
+                                className="btn btn-sm btn-reject"
+                                title="Reject"
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}
+                              >
+                                <HiX /> Reject
+                              </button>
+                            </div>
+                          ) : (
+                            <span style={{ fontSize: '11px', color: '#94a3b8' }}>—</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                    {employeeApplications.length === 0 && (
+                      <tr>
+                        <td colSpan="9" style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
+                          No job applications yet.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            </div>
+          ) : activeTab !== 'sell' ? (
           <div className="table-responsive">
             <table className="compact-table">
               {activeTab === 'monitoring' && (
@@ -1404,7 +1578,7 @@ function AdminContent() {
                {activeTab === 'employees' && user.role === 'admin' && (
                  <>
                    <thead>
-                     <tr><th>SL.</th><th>Username</th><th>Name</th><th>Phone</th><th>Salary</th><th style={{ textAlign: 'right' }}>Ops</th></tr>
+                     <tr><th>SL.</th><th>Username</th><th>Name</th><th>Phone</th><th>Salary</th><th>Access</th><th style={{ textAlign: 'right' }}>Ops</th></tr>
                    </thead>
                    <tbody>
                      {employees.map((emp, idx) => (
@@ -1414,6 +1588,11 @@ function AdminContent() {
                          <td data-label="Name"><div style={{ fontSize: '12px' }}>{emp.full_name || 'PENDING'}</div></td>
                          <td data-label="Phone"><div style={{ fontSize: '12px' }}>{emp.phone || '---'}</div></td>
                          <td data-label="Salary"><div style={{ fontSize: '12px', fontWeight: 600 }}>৳{parseFloat(emp.basic_salary || 0).toLocaleString()}</div></td>
+                         <td data-label="Access">
+                           <div style={{ fontSize: '10px', fontWeight: 800, color: Number(emp.is_blocked) ? '#dc2626' : '#059669' }}>
+                             {Number(emp.is_blocked) ? 'BLOCKED' : 'ACTIVE'}
+                           </div>
+                         </td>
                          <td style={{ textAlign: 'right' }}>
                              <div className="manage-actions">
                                  <button onClick={() => setEditEmployee(emp)} className="btn btn-sm btn-outline" title="Edit Profile"><HiPencilAlt /></button>
@@ -1430,13 +1609,18 @@ function AdminContent() {
                                 >
                                   <HiKey />
                                 </button>
+                                {Number(emp.is_blocked) ? (
+                                  <button type="button" onClick={() => handleEmployeeBlock(emp.admin_id, false)} className="btn btn-sm btn-approve" title="Unblock" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><HiLockOpen /></button>
+                                ) : (
+                                  <button type="button" onClick={() => handleEmployeeBlock(emp.admin_id, true)} className="btn btn-sm btn-outline" title="Block" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#991b1b', borderColor: '#fecaca' }}><HiLockClosed /></button>
+                                )}
                                  <button onClick={async () => { if(await showConfirm('Delete user?')) { await fetch(`/api/admin/users?id=${emp.admin_id}`, {method: 'DELETE'}); loadData(); } }} className="btn btn-sm btn-reject" title="Delete"><HiOutlineTrash /></button>
                              </div>
                          </td>
                        </tr>
                      ))}
                      {employees.length === 0 && (
-                       <tr><td colSpan="6" style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>No employees found.</td></tr>
+                       <tr><td colSpan="7" style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>No employees found.</td></tr>
                      )}
                    </tbody>
                  </>
@@ -1498,82 +1682,9 @@ function AdminContent() {
                   </tbody>
                 </>
               )}
-
-              {activeTab === 'recruitment' && user.role === 'admin' && (
-                <>
-                  <thead>
-                    <tr>
-                      <th>SL.</th>
-                      <th>Name</th>
-                      <th>Phone</th>
-                      <th>Email</th>
-                      <th>Mode</th>
-                      <th>Circular</th>
-                      <th>Status</th>
-                      <th>Username</th>
-                      <th style={{ textAlign: 'right' }}>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {employeeApplications.map((row, idx) => (
-                      <tr key={row.id}>
-                        <td>{idx + 1}</td>
-                        <td><div style={{ fontWeight: 600, fontSize: '12px' }}>{row.full_name}</div></td>
-                        <td><div style={{ fontSize: '12px' }}>{row.phone}</div></td>
-                        <td><div style={{ fontSize: '12px' }}>{row.email}</div></td>
-                        <td><div style={{ fontSize: '11px', textTransform: 'uppercase', fontWeight: 600 }}>{row.work_preference}</div></td>
-                        <td><div style={{ fontSize: '11px', fontFamily: 'monospace' }}>{row.job_reference || '—'}</div></td>
-                        <td>
-                          <div style={{ fontSize: '11px', fontWeight: 700, color: row.status === 'approved' ? '#059669' : row.status === 'rejected' ? '#dc2626' : '#b45309' }}>
-                            {row.status?.toUpperCase()}
-                          </div>
-                        </td>
-                        <td>
-                          <div style={{ fontSize: '11px', fontWeight: 600, fontFamily: 'monospace' }}>
-                            {row.assigned_username || '—'}
-                          </div>
-                        </td>
-                        <td style={{ textAlign: 'right' }}>
-                          {row.status === 'pending' ? (
-                            <div className="manage-actions">
-                              <button
-                                type="button"
-                                onClick={() => handleJobApplicationDecision(row.id, 'approved')}
-                                className="btn btn-sm btn-approve"
-                                title="Approve"
-                                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}
-                              >
-                                <HiCheck /> Approve
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleJobApplicationDecision(row.id, 'rejected')}
-                                className="btn btn-sm btn-reject"
-                                title="Reject"
-                                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}
-                              >
-                                <HiX /> Reject
-                              </button>
-                            </div>
-                          ) : (
-                            <span style={{ fontSize: '11px', color: '#94a3b8' }}>—</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                    {employeeApplications.length === 0 && (
-                      <tr>
-                        <td colSpan="9" style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
-                          No job applications yet.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </>
-              )}
             </table>
           </div>
-        )}
+          ) : null}
 
 
         {activeTab === 'sell' && user.role === 'admin' && (
