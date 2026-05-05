@@ -231,6 +231,33 @@ export async function GET(request) {
       LIMIT 12
     `, ownerParams);
 
+    let employeeDailyActivity = [];
+    if (isEmployee) {
+      [employeeDailyActivity] = await pool.query(
+        `
+        SELECT DATE_FORMAT(t.activity_date, '%Y-%m-%d') as activity_date,
+               SUM(t.added) as added,
+               SUM(t.sold) as sold
+        FROM (
+          SELECT DATE(c.created_at) as activity_date, COUNT(*) as added, 0 as sold
+          FROM channels c
+          WHERE c.created_by = ?
+          GROUP BY DATE(c.created_at)
+
+          UNION ALL
+
+          SELECT DATE(c.sold_at) as activity_date, 0 as added, COUNT(*) as sold
+          FROM channels c
+          WHERE c.created_by = ? AND c.is_sold = 1 AND c.sold_at IS NOT NULL
+          GROUP BY DATE(c.sold_at)
+        ) t
+        GROUP BY t.activity_date
+        ORDER BY t.activity_date DESC
+        `,
+        [session.userId, session.userId]
+      );
+    }
+
     return NextResponse.json({
       summary: stats,
       staffPerformance,
@@ -238,7 +265,8 @@ export async function GET(request) {
       bestChannels,
       oldChannels,
       statusDist,
-      creationTrend
+      creationTrend,
+      employeeDailyActivity
     });
   } catch (error) {
     console.error('Analytics Error:', error);

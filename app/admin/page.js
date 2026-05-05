@@ -1108,6 +1108,53 @@ function AdminContent() {
               )}
            </div>
 
+           {user.role === 'employee' && (
+             <div className="dashboard-card" style={{ marginBottom: '1rem' }}>
+               <div className="dashboard-card-title">My Daily Channel Activity</div>
+               <div className="table-responsive">
+                 <table className="compact-table">
+                   <thead>
+                     <tr>
+                       <th>Date</th>
+                       <th>Added</th>
+                       <th>Sold</th>
+                     </tr>
+                   </thead>
+                   <tbody>
+                     {(analytics?.employeeDailyActivity || []).map((row) => (
+                       <tr key={row.activity_date}>
+                         <td data-label="Date">
+                           <div style={{ fontSize: '11px', fontWeight: 600 }}>
+                             {row.activity_date
+                               ? new Date(row.activity_date).toLocaleDateString('en-GB')
+                               : '---'}
+                           </div>
+                         </td>
+                         <td data-label="Added">
+                           <div style={{ fontSize: '11px', fontWeight: 700, color: '#334155' }}>
+                             {Number(row.added || 0)}
+                           </div>
+                         </td>
+                         <td data-label="Sold">
+                           <div style={{ fontSize: '11px', fontWeight: 700, color: '#10b981' }}>
+                             {Number(row.sold || 0)}
+                           </div>
+                         </td>
+                       </tr>
+                     ))}
+                     {(analytics?.employeeDailyActivity || []).length === 0 && (
+                       <tr>
+                         <td colSpan="3" style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>
+                           No daily activity found yet.
+                         </td>
+                       </tr>
+                     )}
+                   </tbody>
+                 </table>
+               </div>
+             </div>
+           )}
+
         {activeTab === 'admins' && user.role === 'admin' && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
              {/* Admin specific stats can go here if needed */}
