@@ -118,6 +118,7 @@ function AdminContent() {
   const [filters, setFilters] = useState({
     search: '',
     workerId: 'all',
+    employeeId: 'all',
     kpiStatus: 'all',
     marketStatus: 'all',
     sortBy: 'default',
@@ -136,10 +137,11 @@ function AdminContent() {
         c.channel_link?.toLowerCase().includes(filters.search.toLowerCase());
       
       const matchesWorker = filters.workerId === 'all' || c.worker_id == filters.workerId;
+      const matchesEmployee = filters.employeeId === 'all' || c.created_by == filters.employeeId;
       const matchesKPI = filters.kpiStatus === 'all' || (c.status || 'new') === filters.kpiStatus;
       const matchesMarket = filters.marketStatus === 'all' || (c.is_selected ? 'online' : 'offline') === filters.marketStatus;
 
-      return matchesSearch && matchesWorker && matchesKPI && matchesMarket;
+      return matchesSearch && matchesWorker && matchesEmployee && matchesKPI && matchesMarket;
     });
 
     if (filters.sortBy === 'subs_desc') {
@@ -165,7 +167,8 @@ function AdminContent() {
       const matchesSearch = !filters.search || 
         c.channel_name?.toLowerCase().includes(filters.search.toLowerCase());
       const matchesWorker = filters.workerId === 'all' || c.worker_id == filters.workerId;
-      return matchesSearch && matchesWorker;
+      const matchesEmployee = filters.employeeId === 'all' || c.created_by == filters.employeeId;
+      return matchesSearch && matchesWorker && matchesEmployee;
     });
 
     if (filters.sortBy === 'subs_desc') {
@@ -227,6 +230,23 @@ function AdminContent() {
     }
     return result;
   }, [sources, filters]);
+
+  const employeeFilterOptions = useMemo(() => {
+    if (!['monitoring', 'channels', 'sales'].includes(activeTab)) return [];
+    const scopedChannels = channels.filter(c => (activeTab === 'sales' ? c.is_sold : !c.is_sold));
+    const byEmployee = new Map();
+    for (const c of scopedChannels) {
+      if (c.created_by == null) continue;
+      const key = String(c.created_by);
+      if (!byEmployee.has(key)) {
+        byEmployee.set(key, {
+          id: c.created_by,
+          label: c.creator_name || `Employee #${c.created_by}`,
+        });
+      }
+    }
+    return Array.from(byEmployee.values()).sort((a, b) => a.label.localeCompare(b.label));
+  }, [activeTab, channels]);
 
   const loadData = async () => {
     setLoading(true);
@@ -1609,7 +1629,22 @@ function AdminContent() {
                 onChange={(e) => setFilters({...filters, workerId: e.target.value})}
               >
                 <option value="all">Any Staff</option>
-                {(activeTab === 'sales' ? soldWorkers : workers).map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+                {(activeTab === 'sales' ? soldWorkers : activeWorkers).map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+              </select>
+            </div>
+          )}
+          {(['monitoring', 'channels', 'sales'].includes(activeTab) && user.role === 'admin') && (
+            <div style={{ flex: '1', minWidth: '130px' }}>
+              <select
+                className="compact-form-control"
+                style={{ padding: '0.4rem 0.6rem', fontSize: '11.5px' }}
+                value={filters.employeeId}
+                onChange={(e) => setFilters({ ...filters, employeeId: e.target.value })}
+              >
+                <option value="all">Any Employee</option>
+                {employeeFilterOptions.map(emp => (
+                  <option key={emp.id} value={emp.id}>{emp.label}</option>
+                ))}
               </select>
             </div>
           )}
@@ -1662,7 +1697,7 @@ function AdminContent() {
             </div>
           )}
           <button 
-            onClick={() => setFilters({ search: '', workerId: 'all', kpiStatus: 'all', marketStatus: 'all', sortBy: 'default', sourceType: 'all' })}
+            onClick={() => setFilters({ search: '', workerId: 'all', employeeId: 'all', kpiStatus: 'all', marketStatus: 'all', sortBy: 'default', sourceType: 'all' })}
             className="btn btn-sm btn-outline"
             style={{ padding: '0.35rem 0.6rem', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '11px', border: '1px solid #e2e8f0' }}
           >
@@ -1695,7 +1730,7 @@ function AdminContent() {
             </select>
           </div>
           <button 
-            onClick={() => setFilters({ search: '', workerId: 'all', kpiStatus: 'all', marketStatus: 'all', sortBy: 'default', sourceType: 'all' })}
+            onClick={() => setFilters({ search: '', workerId: 'all', employeeId: 'all', kpiStatus: 'all', marketStatus: 'all', sortBy: 'default', sourceType: 'all' })}
             className="btn btn-sm btn-outline"
             style={{ padding: '0.35rem 0.6rem', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '11px', border: '1px solid #e2e8f0' }}
           >
