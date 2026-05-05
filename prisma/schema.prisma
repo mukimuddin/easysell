@@ -8,59 +8,54 @@ datasource db {
 }
 
 model admin_users {
-  id               Int               @id @default(autoincrement())
-  username         String?           @db.VarChar(50)
-  password         String?           @db.VarChar(255)
-  auth_version     Int?              @default(0)
-  is_blocked       Int?              @default(0) @db.TinyInt
-  role             admin_users_role? @default(employee)
-  workers          workers[]
-  employee_profile employee_details?
+  id           Int              @id
+  username     String?          @db.VarChar(50)
+  password     String?          @db.VarChar(255)
+  role         admin_users_role @default(employee)
+  is_blocked   Boolean          @default(false)
+  auth_version Int              @default(0)
 }
 
 model employee_details {
-  id                         Int         @id @default(autoincrement())
-  admin_id                   Int         @unique
-  full_name                  String?     @db.VarChar(100)
-  father_name                String?     @db.VarChar(100)
-  mother_name                String?     @db.VarChar(100)
-  phone                      String?     @db.VarChar(20)
-  email                      String?     @db.VarChar(100)
-  present_address            String?     @db.Text
-  permanent_address          String?     @db.Text
-  dob                        DateTime?   @db.Date
-  nid_no                     String?     @db.VarChar(50)
-  joining_date               DateTime?   @db.Date
-  designation                String?     @db.VarChar(50)
-  basic_salary               Decimal?    @db.Decimal(10, 2)
-  contract_target            Int?        @default(0)
-  bank_name                  String?     @db.VarChar(100)
-  account_no                 String?     @db.VarChar(50)
-  emergency_contact_name     String?     @db.VarChar(100)
-  emergency_contact_relation String?     @db.VarChar(50)
-  emergency_contact_phone    String?     @db.VarChar(20)
-  admin_user                 admin_users @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  id                         Int       @id @default(autoincrement())
+  admin_id                   Int       @unique(map: "admin_id")
+  full_name                  String?   @db.VarChar(100)
+  father_name                String?   @db.VarChar(100)
+  mother_name                String?   @db.VarChar(100)
+  phone                      String?   @db.VarChar(20)
+  email                      String?   @db.VarChar(100)
+  present_address            String?   @db.Text
+  permanent_address          String?   @db.Text
+  dob                        DateTime? @db.Date
+  nid_no                     String?   @db.VarChar(50)
+  joining_date               DateTime? @db.Date
+  designation                String?   @db.VarChar(50)
+  basic_salary               Decimal?  @db.Decimal(10, 2)
+  bank_name                  String?   @db.VarChar(100)
+  account_no                 String?   @db.VarChar(50)
+  emergency_contact_name     String?   @db.VarChar(100)
+  emergency_contact_relation String?   @db.VarChar(50)
+  emergency_contact_phone    String?   @db.VarChar(20)
+  contract_target            Int?      @default(0)
 }
 
 model channels {
-  id            Int             @id @default(autoincrement())
-  channel_name  String          @db.VarChar(255)
-  channel_link  String          @db.Text
-  is_selected   Boolean?        @default(false)
-  whatsapp      String?         @db.VarChar(50)
-  created_at    DateTime?       @default(now()) @db.Timestamp(0)
-  worker_id     Int?
-  open_date     DateTime?       @db.Date
-  sell_price    Decimal?        @default(0.00) @db.Decimal(10, 2)
-  worker_cost   Decimal?        @default(0.00) @db.Decimal(10, 2)
-  is_sold       Boolean?        @default(false)
-  created_by    Int?            @default(1)
-  gmail         String?         @db.VarChar(255)
-  password      String?         @db.VarChar(255)
-  worker        workers?        @relation(fields: [worker_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  daily_updates daily_updates[]
+  id           Int       @id @default(autoincrement())
+  channel_name String    @db.VarChar(255)
+  channel_link String    @db.Text
+  is_selected  Boolean?  @default(false)
+  whatsapp     String?   @db.VarChar(50)
+  created_at   DateTime? @default(now()) @db.Timestamp(0)
+  worker_id    Int?
+  open_date    DateTime? @db.Date
+  sell_price   Decimal?  @default(0.00) @db.Decimal(10, 2)
+  worker_cost  Decimal?  @default(0.00) @db.Decimal(10, 2)
+  is_sold      Boolean?  @default(false)
+  created_by   Int?      @default(1)
+  gmail        String?   @db.VarChar(255)
+  password     String?   @db.VarChar(255)
 
-  @@index([worker_id])
+  @@index([worker_id], map: "fk_1")
 }
 
 model daily_updates {
@@ -72,9 +67,8 @@ model daily_updates {
   update_date     DateTime?             @default(dbgenerated("'CURRENT_DATE'")) @db.Date
   created_at      DateTime?             @default(now()) @db.Timestamp(0)
   shorts_count    Int?                  @default(0)
-  channel         channels              @relation(fields: [channel_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@index([channel_id])
+  @@index([channel_id], map: "fk_1")
 }
 
 model login_attempts {
@@ -83,31 +77,17 @@ model login_attempts {
   attempts     Int?      @default(1)
   last_attempt DateTime? @default(now()) @db.Timestamp(0)
 
-  @@index([ip])
+  @@index([ip], map: "ip")
 }
 
 model workers {
-  id         Int          @id @default(autoincrement())
-  name       String       @db.VarChar(255)
-  whatsapp   String?      @db.VarChar(50)
-  created_at DateTime?    @default(now()) @db.Timestamp(0)
+  id         Int       @id @default(autoincrement())
+  name       String    @db.VarChar(255)
+  whatsapp   String?   @db.VarChar(50)
+  created_at DateTime? @default(now()) @db.Timestamp(0)
   created_by Int?
-  channels   channels[]
-  creator    admin_users? @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
-  @@index([created_by])
-}
-
-enum admin_users_role {
-  admin
-  employee
-  buyer
-}
-
-enum daily_updates_status {
-  growing
-  flop
-  normal
+  @@index([created_by], map: "fk_worker_creator")
 }
 
 model sources {
@@ -119,21 +99,63 @@ model sources {
 }
 
 model buyer_accounts {
-  id                   Int                  @id @default(autoincrement())
-  full_name            String               @db.VarChar(120)
-  company_name         String?              @db.VarChar(150)
-  phone                String               @db.VarChar(30)
-  email                String               @unique @db.VarChar(150)
-  password             String               @db.VarChar(255)
+  id                   Int                   @id @default(autoincrement())
+  full_name            String                @db.VarChar(120)
+  company_name         String?               @db.VarChar(150)
+  phone                String                @db.VarChar(30)
+  email                String                @unique(map: "ux_buyer_email") @db.VarChar(150)
+  password             String                @db.VarChar(255)
   status               buyer_accounts_status @default(pending)
   reviewed_by          Int?
-  reviewed_at          DateTime?            @db.DateTime(0)
-  created_at           DateTime?            @default(now()) @db.Timestamp(0)
-  is_blocked           Int?                 @default(0) @db.TinyInt
-  credentials_unlocked Int?                 @default(0) @db.TinyInt
+  reviewed_at          DateTime?             @db.DateTime(0)
+  created_at           DateTime?             @default(now()) @db.Timestamp(0)
+  is_blocked           Int?                  @default(0) @db.TinyInt
+  credentials_unlocked Int?                  @default(0) @db.TinyInt
+}
+
+model employee_applications {
+  id                Int                                   @id @default(autoincrement())
+  full_name         String                                @db.VarChar(120)
+  phone             String                                @db.VarChar(30)
+  email             String                                @db.VarChar(150)
+  password          String                                @db.VarChar(255)
+  work_preference   employee_applications_work_preference @default(hybrid)
+  job_reference     String?                               @db.VarChar(80)
+  status            employee_applications_status          @default(pending)
+  reviewed_by       Int?
+  reviewed_at       DateTime?                             @db.DateTime(0)
+  created_admin_id  Int?
+  assigned_username String?                               @db.VarChar(50)
+  created_at        DateTime?                             @default(now()) @db.Timestamp(0)
+
+  @@index([email], map: "idx_employee_apps_email")
+  @@index([status], map: "idx_employee_apps_status")
+}
+
+enum daily_updates_status {
+  growing
+  flop
+  normal
 }
 
 enum buyer_accounts_status {
+  pending
+  approved
+  rejected
+}
+
+enum admin_users_role {
+  admin
+  employee
+}
+
+enum employee_applications_work_preference {
+  online
+  field
+  hybrid
+}
+
+enum employee_applications_status {
   pending
   approved
   rejected

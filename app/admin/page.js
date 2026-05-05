@@ -953,7 +953,7 @@ function AdminContent() {
                 Internal Management System
               </div>
               <h1 className="admin-title" style={{ fontSize: '20px', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                 {activeTab === 'sales' ? 'Profit Ledger' : activeTab === 'admins' ? 'User Administration' : activeTab === 'buyers' ? 'Buyer Requests' : activeTab === 'recruitment' ? 'Job Applications' : activeTab === 'sell' ? 'Sell Unit' : activeTab === 'dashboard' ? 'Market Overview' : activeTab === 'profile' ? 'My Profile' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
+                 {activeTab === 'sales' ? 'Profit Ledger' : activeTab === 'admins' ? 'User Administration' : activeTab === 'buyers' ? 'Buyer Requests' : activeTab === 'recruitment' ? 'Job Applications' : activeTab === 'sell' ? 'Sell Unit' : activeTab === 'dashboard' ? 'Market Overview' : activeTab === 'performance' ? 'Staff Performance' : activeTab === 'profile' ? 'My Profile' : (activeTab || '').charAt(0).toUpperCase() + (activeTab || '').slice(1)}
               </h1>
            </div>
            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
@@ -1001,18 +1001,18 @@ function AdminContent() {
                     </div>
                     <div style={{ textAlign: 'right' }}>
                        <div style={{ fontSize: '24px', fontWeight: 900, color: '#10b981' }}>
-                          {analytics.summary.contract_target > 0 
-                             ? ((analytics.summary.total_channels / analytics.summary.contract_target) * 100).toFixed(1) 
+                          {analytics?.summary?.contract_target > 0 
+                             ? ((analytics?.summary?.total_channels / analytics?.summary?.contract_target) * 100).toFixed(1) 
                              : '0.0'}%
                        </div>
                        <div style={{ fontSize: '10px', color: '#94a3b8' }}>
-                          {analytics.summary.total_channels} / {analytics.summary.contract_target || 0} Complete
+                          {analytics?.summary?.total_channels} / {analytics?.summary?.contract_target || 0} Complete
                        </div>
                     </div>
                  </div>
                  <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '10px', overflow: 'hidden' }}>
                     <div style={{ 
-                       width: `${Math.min(100, analytics.summary.contract_target > 0 ? (analytics.summary.total_channels / analytics.summary.contract_target) * 100 : 0)}%`, 
+                       width: `${Math.min(100, analytics?.summary?.contract_target > 0 ? (analytics?.summary?.total_channels / analytics?.summary?.contract_target) * 100 : 0)}%`, 
                        height: '100%', 
                        background: 'linear-gradient(90deg, #10b981 0%, #34d399 100%)',
                        boxShadow: '0 0 10px rgba(16, 185, 129, 0.5)',
@@ -1021,7 +1021,7 @@ function AdminContent() {
                  </div>
                  <div style={{ marginTop: '0.5rem', fontSize: '11px', color: '#cbd5e1', display: 'flex', justifyContent: 'space-between' }}>
                     <span>Started from zero</span>
-                    <span>Target: {analytics.summary.contract_target || 0} Units</span>
+                    <span>Target: {analytics?.summary?.contract_target || 0} Units</span>
                  </div>
               </div>
            )}
@@ -1031,28 +1031,30 @@ function AdminContent() {
                 <>
                   <div className="stat-card" style={{ padding: '0.6rem 0.85rem' }}>
                     <div className="stat-label">Total Revenue</div>
-                    <div className="stat-value" style={{ fontSize: '1.15rem' }}>৳{parseFloat(analytics.summary.total_revenue || 0).toLocaleString()}</div>
+                    <div className="stat-value" style={{ fontSize: '1.15rem' }}>৳{parseFloat(analytics?.summary?.total_revenue || 0).toLocaleString()}</div>
                   </div>
                   <div className="stat-card" style={{ padding: '0.6rem 0.85rem' }}>
                     <div className="stat-label">Net Profit</div>
-                    <div className="stat-value" style={{ fontSize: '1.15rem' }}>৳{parseFloat(analytics.summary.total_profit || 0).toLocaleString()}</div>
+                    <div className="stat-value" style={{ fontSize: '1.15rem' }}>৳{parseFloat(analytics?.summary?.total_profit || 0).toLocaleString()}</div>
                   </div>
                 </>
               )}
               <div className="stat-card" style={{ padding: '0.6rem 0.85rem' }}>
                  <div className="stat-label">Active Stock</div>
-                 <div className="stat-value" style={{ fontSize: '1.15rem' }}>{analytics.summary.active_count}</div>
+                 <div className="stat-value" style={{ fontSize: '1.15rem' }}>{analytics?.summary?.active_count || 0}</div>
               </div>
               <div className="stat-card" style={{ padding: '0.6rem 0.85rem' }}>
                  <div className="stat-label">Total Sold</div>
-                 <div className="stat-value" style={{ fontSize: '1.15rem' }}>{analytics.summary.sold_count}</div>
+                 <div className="stat-value" style={{ fontSize: '1.15rem' }}>{analytics?.summary?.sold_count || 0}</div>
               </div>
               {user.role === 'employee' && (
-                 <div className="stat-card" style={{ padding: '0.6rem 0.85rem', borderLeft: '3px solid #10b981' }}>
-                    <div className="stat-label" style={{ color: '#059669', fontWeight: 800 }}>Contract Target</div>
-                    <div className="stat-value" style={{ fontSize: '1.15rem', display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                       <span>{analytics.summary.sold_count}</span>
-                       <span style={{ fontSize: '0.75rem', color: '#64748b' }}>/ {analytics.summary.contract_target || 0} completed</span>
+                 <div className="stat-card" style={{ padding: '0.6rem 0.85rem', borderLeft: '3px solid #10b981', background: 'rgba(16, 185, 129, 0.05)' }}>
+                    <div className="stat-label" style={{ color: '#059669', fontWeight: 800 }}>Personal Earnings</div>
+                    <div className="stat-value" style={{ fontSize: '1.15rem', color: '#10b981' }}>
+                       ৳{parseFloat(analytics?.summary?.earnings_so_far || 0).toLocaleString()}
+                    </div>
+                    <div style={{ fontSize: '9px', color: '#64748b', marginTop: '2px' }}>
+                       Rate: ৳{(analytics?.summary?.earnings_per_channel || 0).toFixed(2)} / unit
                     </div>
                  </div>
               )}
@@ -1092,7 +1094,7 @@ function AdminContent() {
                           </Pie>
                           <Tooltip 
                              contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 8px 30px rgba(0,0,0,0.12)', fontSize: '12px', padding: '8px 12px' }}
-                             formatter={(value, name) => [value, name.charAt(0).toUpperCase() + name.slice(1)]}
+                             formatter={(value, name) => [value, (name || '').charAt(0).toUpperCase() + (name || '').slice(1)]}
                           />
                           <Legend 
                              verticalAlign="bottom" 
@@ -1130,7 +1132,7 @@ function AdminContent() {
               <div className="dashboard-card" style={{ minHeight: '300px' }}>
                  <div className="dashboard-card-title">Specialist Benchmark</div>
                  <ResponsiveContainer width="100%" height={220}>
-                    <BarChart data={analytics.bestWorkers.slice(0, 5)} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
+                    <BarChart data={analytics?.bestWorkers?.slice(0, 5)} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
                        <XAxis type="number" hide />
                        <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#1e293b', fontWeight: 600 }} width={80} />
                        <Tooltip 
@@ -1139,7 +1141,7 @@ function AdminContent() {
                           formatter={(value) => [value.toLocaleString(), 'Total Subs']}
                        />
                        <Bar dataKey="total_subs" radius={[0, 4, 4, 0]} barSize={20}>
-                          {analytics.bestWorkers.slice(0, 5).map((entry, index) => (
+                          {analytics?.bestWorkers?.slice(0, 5).map((entry, index) => (
                              <Cell key={`cell-${index}`} fill={['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][index % 5]} />
                           ))}
                        </Bar>
@@ -1152,7 +1154,7 @@ function AdminContent() {
               <div className="dashboard-card">
                  <div className="dashboard-card-title">High Performance</div>
                  <div className="bento-list">
-                    {analytics.bestChannels.map(c => (
+                    {(analytics?.bestChannels || []).map(c => (
                       <div key={c.id} className="bento-item">
                          <div className="bento-main">
                             <div className="bento-name">{c.channel_name}</div>
@@ -1161,14 +1163,14 @@ function AdminContent() {
                          <div className="bento-badge">{c.sub_count?.toLocaleString() || 0}</div>
                       </div>
                     ))}
-                    {analytics.bestChannels.length === 0 && <div style={{ textAlign: 'center', padding: '0.5rem', color: '#94a3b8', fontSize: '10px' }}>No data</div>}
+                    {(analytics?.bestChannels || []).length === 0 && <div style={{ textAlign: 'center', padding: '0.5rem', color: '#94a3b8', fontSize: '10px' }}>No data</div>}
                  </div>
               </div>
 
               <div className="dashboard-card">
                  <div className="dashboard-card-title">Top Specialists</div>
                  <div className="bento-list">
-                    {analytics.bestWorkers.map((w, idx) => (
+                    {(analytics?.bestWorkers || []).map((w, idx) => (
                       <div key={w.id} className="bento-item">
                          <div className="bento-main">
                             <div className="bento-name">{w.name}</div>
@@ -1184,7 +1186,7 @@ function AdminContent() {
 
                  <div className="dashboard-card-title" style={{ marginTop: '1rem' }}>Aging Summary</div>
                  <div className="bento-list">
-                    {analytics.oldChannels.map(c => (
+                    {(analytics?.oldChannels || []).map(c => (
                       <div key={c.id} className="bento-item">
                          <div className="bento-main">
                             <div className="bento-name">{c.channel_name}</div>
@@ -1193,8 +1195,99 @@ function AdminContent() {
                          <div className="bento-badge">{c.open_date ? new Date(c.open_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '--'}</div>
                       </div>
                     ))}
-                    {analytics.oldChannels.length === 0 && <div style={{ textAlign: 'center', padding: '0.5rem', color: '#94a3b8', fontSize: '10px' }}>No data</div>}
+                    {(analytics?.oldChannels || []).length === 0 && <div style={{ textAlign: 'center', padding: '0.5rem', color: '#94a3b8', fontSize: '10px' }}>No data</div>}
                  </div>
+              </div>
+           </div>
+        </div>
+      )}
+
+      {activeTab === 'performance' && analytics && user.role === 'admin' && (
+        <div className="dashboard-content">
+           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+              <div className="dashboard-card" style={{ minHeight: '350px' }}>
+                 <div className="dashboard-card-title">Staff Acquisition Benchmark (Pillar Chart)</div>
+                 <div style={{ flex: 1, padding: '1rem' }}>
+                   <ResponsiveContainer width="100%" height={280}>
+                       <BarChart data={analytics?.staffPerformance || []} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                         <XAxis dataKey="username" axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 600 }} />
+                         <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11 }} />
+                         <Tooltip 
+                           cursor={{ fill: 'rgba(0,0,0,0.02)' }}
+                           contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 8px 30px rgba(0,0,0,0.1)' }}
+                         />
+                         <Bar dataKey="total_brought" name="Channels Brought" fill="#6366f1" radius={[4, 4, 0, 0]} barSize={35} />
+                         <Bar dataKey="sold_count" name="Channels Sold" fill="#10b981" radius={[4, 4, 0, 0]} barSize={35} />
+                       </BarChart>
+                   </ResponsiveContainer>
+                 </div>
+              </div>
+
+              <div className="dashboard-card" style={{ minHeight: '350px' }}>
+                 <div className="dashboard-card-title">Inventory Share by Staff</div>
+                 <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                   <ResponsiveContainer width="100%" height={280}>
+                       <PieChart>
+                         <Pie
+                           data={analytics?.staffPerformance || []}
+                           cx="50%"
+                           cy="50%"
+                           innerRadius={70}
+                           outerRadius={95}
+                           paddingAngle={5}
+                           dataKey="total_brought"
+                           nameKey="username"
+                           stroke="none"
+                         >
+                           {(analytics?.staffPerformance || []).map((entry, index) => (
+                               <Cell key={`cell-${index}`} fill={['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'][index % 6]} />
+                           ))}
+                         </Pie>
+                         <Tooltip 
+                           contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 8px 30px rgba(0,0,0,0.1)' }}
+                         />
+                         <Legend verticalAlign="bottom" align="center" iconType="circle" wrapperStyle={{ fontSize: '11px', fontWeight: 600, paddingTop: '15px' }} />
+                       </PieChart>
+                   </ResponsiveContainer>
+                 </div>
+              </div>
+           </div>
+
+           <div className="dashboard-card">
+              <div className="dashboard-card-title">Staff Performance Leaderboard</div>
+              <div className="table-responsive">
+                <table className="compact-table">
+                  <thead>
+                    <tr>
+                      <th>Staff Member</th>
+                      <th>Total Brought</th>
+                      <th>Sold Units</th>
+                      <th>Conv. Rate</th>
+                      <th style={{ textAlign: 'right' }}>Total Commission</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(analytics?.staffPerformance || []).map((staff, idx) => (
+                      <tr key={idx}>
+                        <td>
+                           <div style={{ fontWeight: 700, fontSize: '13px' }}>{staff.full_name}</div>
+                           <div style={{ fontSize: '10px', color: '#94a3b8' }}>@{staff.username}</div>
+                        </td>
+                        <td><div style={{ fontWeight: 600 }}>{staff.total_brought} Units</div></td>
+                        <td><div style={{ fontWeight: 600, color: '#10b981' }}>{staff.sold_count} Sold</div></td>
+                        <td>
+                           <div style={{ fontSize: '11px', fontWeight: 700 }}>
+                              {staff.total_brought > 0 ? ((staff.sold_count / staff.total_brought) * 100).toFixed(1) : 0}%
+                           </div>
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
+                           <div style={{ fontWeight: 800, color: '#0f172a' }}>৳{parseFloat(staff.earnings || 0).toLocaleString()}</div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
            </div>
         </div>

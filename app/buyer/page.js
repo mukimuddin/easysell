@@ -2,7 +2,42 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { clearBuyerTabSession } from '@/lib/tabSession';
-import { HiCube, HiRefresh, HiSearch, HiX } from 'react-icons/hi';
+import { 
+  HiCube, HiRefresh, HiSearch, HiX, 
+  HiOutlineClipboardCopy, HiLink, HiCheck 
+} from 'react-icons/hi';
+import { useUI } from '@/components/UIContext';
+
+function CopyButton({ text, title, successMsg }) {
+  const [copied, setCopied] = useState(false);
+  const { toast } = useUI();
+
+  const handleCopy = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    toast.success(successMsg || 'Copied to clipboard!');
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <button
+      onClick={handleCopy}
+      title={title}
+      className={`btn btn-sm ${copied ? 'btn-approve' : 'btn-outline'}`}
+      style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        width: '24px', height: '24px', padding: 0,
+        borderRadius: '4px',
+        transition: 'all 0.2s ease'
+      }}
+    >
+      {copied ? <HiCheck style={{ fontSize: '12px' }} /> : (title.includes('Link') ? <HiLink style={{ fontSize: '12px' }} /> : <HiOutlineClipboardCopy style={{ fontSize: '12px' }} />)}
+    </button>
+  );
+}
 
 export default function BuyerPanelPage() {
   const [profile, setProfile] = useState(null);
@@ -11,7 +46,7 @@ export default function BuyerPanelPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
-  const [sortBy, setSortBy] = useState('date_desc');
+  const [sortBy, setSortBy] = useState('subs_desc');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
@@ -247,9 +282,16 @@ export default function BuyerPanelPage() {
                   {profile?.credentials_unlocked === 1 && (
                     <td>
                       {(channel.gmail || channel.password) ? (
-                        <div style={{ fontSize: '10px', display: 'flex', flexDirection: 'column', gap: '0.1rem' }}>
-                          <div style={{ color: '#475569' }}><strong>E:</strong> {channel.gmail || '-'}</div>
-                          <div style={{ color: '#475569' }}><strong>P:</strong> {channel.password || '-'}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <div style={{ fontSize: '10px', display: 'flex', flexDirection: 'column', gap: '0.1rem', flex: 1 }}>
+                            <div style={{ color: '#475569' }}><strong>E:</strong> {channel.gmail || '-'}</div>
+                            <div style={{ color: '#475569' }}><strong>P:</strong> {channel.password || '-'}</div>
+                          </div>
+                          <CopyButton 
+                            text={`GMAIL: ${channel.gmail || 'N/A'}\nPASS: ${channel.password || 'N/A'}`} 
+                            title="Copy Credentials" 
+                            successMsg="Credentials copied!"
+                          />
                         </div>
                       ) : (
                         <span style={{ fontSize: '10px', color: '#94a3b8' }}>None</span>
@@ -257,15 +299,22 @@ export default function BuyerPanelPage() {
                     </td>
                   )}
                   <td style={{ textAlign: 'right' }}>
-                    <a
-                      href={channel.channel_link}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="btn btn-sm btn-outline"
-                      style={{ fontSize: '10px', padding: '0.2rem 0.5rem' }}
-                    >
-                      Open
-                    </a>
+                    <div style={{ display: 'flex', gap: '0.3rem', justifyContent: 'flex-end' }}>
+                       <CopyButton 
+                         text={channel.channel_link} 
+                         title="Copy Link" 
+                         successMsg="Link copied!"
+                       />
+                       <a
+                         href={channel.channel_link}
+                         target="_blank"
+                         rel="noreferrer"
+                         className="btn btn-sm btn-outline"
+                         style={{ fontSize: '10px', padding: '0.2rem 0.5rem' }}
+                       >
+                         Open
+                       </a>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -288,18 +337,32 @@ export default function BuyerPanelPage() {
                   <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 700 }}>
                     #{(page - 1) * pageSize + idx + 1}
                   </div>
-                  <a href={channel.channel_link} target="_blank" rel="noreferrer" className="btn btn-sm btn-outline" style={{ fontSize: '10px', padding: '0.18rem 0.42rem' }}>
-                    Open
-                  </a>
+                  <div style={{ display: 'flex', gap: '0.3rem' }}>
+                    <CopyButton 
+                      text={channel.channel_link} 
+                      title="Copy Link" 
+                      successMsg="Link copied!"
+                    />
+                    <a href={channel.channel_link} target="_blank" rel="noreferrer" className="btn btn-sm btn-outline" style={{ fontSize: '10px', padding: '0.18rem 0.42rem' }}>
+                      Open
+                    </a>
+                  </div>
                 </div>
                 <div style={{ fontWeight: 700, fontSize: '12px', color: '#0f172a', marginBottom: '0.2rem' }}>{channel.channel_name}</div>
                 <div style={{ fontSize: '11px', color: '#64748b' }}>Specialist: {channel.worker_name || 'N/A'}</div>
                 <div style={{ fontSize: '11px', color: '#64748b' }}>Open Date: {channel.open_date ? new Date(channel.open_date).toLocaleDateString('en-GB') : 'N/A'}</div>
                 <div style={{ fontSize: '11px', color: '#64748b' }}>Subs: <strong style={{ color: '#0f172a' }}>{channel.sub_count || 0}</strong></div>
                 {profile?.credentials_unlocked === 1 && (channel.gmail || channel.password) && (
-                  <div style={{ marginTop: '0.3rem', padding: '0.3rem', background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: '4px', fontSize: '10px', display: 'flex', flexDirection: 'column', gap: '0.1rem' }}>
-                    <div style={{ color: '#475569' }}><strong>E:</strong> {channel.gmail || '-'}</div>
-                    <div style={{ color: '#475569' }}><strong>P:</strong> {channel.password || '-'}</div>
+                  <div style={{ marginTop: '0.4rem', padding: '0.45rem', background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <div style={{ fontSize: '10px', display: 'flex', flexDirection: 'column', gap: '0.1rem', flex: 1 }}>
+                      <div style={{ color: '#475569' }}><strong>E:</strong> {channel.gmail || '-'}</div>
+                      <div style={{ color: '#475569' }}><strong>P:</strong> {channel.password || '-'}</div>
+                    </div>
+                    <CopyButton 
+                      text={`GMAIL: ${channel.gmail || 'N/A'}\nPASS: ${channel.password || 'N/A'}`} 
+                      title="Copy Credentials" 
+                      successMsg="Credentials copied!"
+                    />
                   </div>
                 )}
               </div>

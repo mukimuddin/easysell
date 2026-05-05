@@ -121,6 +121,11 @@ export default function ConditionalLayout({ children }) {
              <Link href="/admin?tab=dashboard" className={`sidebar-link ${currentTab === 'dashboard' ? 'active' : ''}`}>
                Dashboard
              </Link>
+             {user.role === 'admin' && (
+               <Link href="/admin?tab=performance" className={`sidebar-link ${currentTab === 'performance' ? 'active' : ''}`}>
+                 Performance
+               </Link>
+             )}
              <Link href="/admin?tab=monitoring" className={`sidebar-link ${currentTab === 'monitoring' ? 'active' : ''}`}>
                Monitoring
              </Link>

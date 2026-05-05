@@ -30,20 +30,59 @@ export async function GET() {
 
     const stats = summary[0];
     
-    // Hide financial data for employees
+    // Employee Earnings Logic
     if (isEmployee) {
-      stats.total_revenue = 0;
-      stats.total_cost = 0;
-      stats.total_profit = 0;
+      const [empRows] = await pool.query('SELECT basic_salary, contract_target FROM employee_details WHERE admin_id = ?', [session.userId]);
+      const emp = empRows[0] || { basic_salary: 0, contract_target: 0 };
       
-      const [empRows] = await pool.query('SELECT contract_target FROM employee_details WHERE admin_id = ?', [session.userId]);
-      stats.contract_target = empRows[0]?.contract_target || 0;
+      const salary = parseFloat(emp.basic_salary) || 0;
+      const target = parseInt(emp.contract_target) || 0;
+      const epc = target > 0 ? (salary / target) : 0;
+      const earnings_so_far = stats.sold_count * epc;
+
+      stats.total_revenue = 0; // Hide from employee
+      stats.total_cost = 0;    // Hide from employee
+      stats.total_profit = 0;  // Hide from employee
+      stats.contract_target = target;
+      stats.basic_salary = salary;
+      stats.earnings_per_channel = epc;
+      stats.earnings_so_far = earnings_so_far;
     } else {
-      stats.total_profit = (stats.total_revenue || 0) - (stats.total_cost || 0);
+      // Admin Logic: Deduct employee commissions from profit
+      const [commRows] = await pool.query(`
+        SELECT SUM(ed.basic_salary / ed.contract_target) as total_comm
+        FROM channels c
+        JOIN admin_users adm ON c.created_by = adm.id
+        JOIN employee_details ed ON adm.id = ed.admin_id
+        WHERE c.is_sold = 1 AND adm.role = 'employee' AND ed.contract_target > 0
+      `);
+      
+      const totalComm = parseFloat(commRows[0]?.total_comm) || 0;
+      stats.total_profit = (stats.total_revenue || 0) - (stats.total_cost || 0) - totalComm;
+      stats.total_commissions = totalComm;
       stats.contract_target = 0;
     }
 
-    // 2. Best Workers (By total sub_count of active channels)
+    // 2. Staff Performance (For Admins)
+    let staffPerformance = [];
+    if (!isEmployee) {
+      [staffPerformance] = await pool.query(`
+        SELECT 
+          u.username, 
+          ed.full_name,
+          COUNT(c.id) as total_brought,
+          SUM(CASE WHEN c.is_sold = 1 THEN 1 ELSE 0 END) as sold_count,
+          SUM(CASE WHEN c.is_sold = 1 THEN (ed.basic_salary / ed.contract_target) ELSE 0 END) as earnings
+        FROM admin_users u
+        JOIN employee_details ed ON u.id = ed.admin_id
+        LEFT JOIN channels c ON u.id = c.created_by
+        WHERE u.role = 'employee' AND ed.contract_target > 0
+        GROUP BY u.id, u.username, ed.full_name
+        ORDER BY total_brought DESC
+      `);
+    }
+
+    // 3. Best Workers (By total sub_count of active channels)
     const [bestWorkers] = await pool.query(`
       SELECT w.id, w.name, SUM(u.sub_count) as total_subs, COUNT(c.id) as channel_count
       FROM workers w
@@ -59,7 +98,7 @@ export async function GET() {
       LIMIT 5
     `, ownerParams);
 
-    // 3. Best Channels (Top active channels by subs)
+    // 4. Best Channels (Top active channels by subs)
     const [bestChannels] = await pool.query(`
       SELECT c.id, c.channel_name, c.channel_link, u.sub_count, u.status, w.name as worker_name
       FROM channels c
@@ -74,7 +113,7 @@ export async function GET() {
       LIMIT 10
     `, ownerParams);
 
-    // 4. Old Channels (Inventory Aging - Oldest active)
+    // 5. Old Channels (Inventory Aging - Oldest active)
     const [oldChannels] = await pool.query(`
       SELECT c.id, c.channel_name, c.open_date, u.sub_count, w.name as worker_name,
              DATEDIFF(CURRENT_DATE, c.open_date) as days_old
@@ -90,7 +129,7 @@ export async function GET() {
       LIMIT 10
     `, ownerParams);
 
-    // 5. Status Distribution (Active only)
+    // 6. Status Distribution (Active only)
     const [statusDist] = await pool.query(`
       SELECT COALESCE(u.status, 'new') as status, COUNT(*) as count 
       FROM channels c
@@ -103,7 +142,7 @@ export async function GET() {
       GROUP BY status
     `, ownerParams);
 
-    // 6. Creation Trend (Last 12 Months)
+    // 7. Creation Trend (Last 12 Months)
     const [creationTrend] = await pool.query(`
       SELECT DATE_FORMAT(c.created_at, '%b %Y') as month, COUNT(*) as count
       FROM channels c
@@ -115,6 +154,7 @@ export async function GET() {
 
     return NextResponse.json({
       summary: stats,
+      staffPerformance,
       bestWorkers,
       bestChannels,
       oldChannels,
