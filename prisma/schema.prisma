@@ -55,6 +55,7 @@ model channels {
   gmail        String?   @db.VarChar(255)
   password     String?   @db.VarChar(255)
   reg_no       Int?      @unique
+  sold_at      DateTime? @db.DateTime(0)
 
   @@index([worker_id], map: "fk_1")
 }

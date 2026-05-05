@@ -3,17 +3,95 @@ import pool from '@/lib/db';
 import { verifySession } from '@/lib/session';
 import { cookies } from 'next/headers';
 
-export async function GET() {
+export async function GET(request) {
   const token = (await cookies()).get('adminToken')?.value;
   const session = await verifySession(token);
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const { searchParams } = new URL(request.url);
+  const employeeUsername = searchParams.get('employeeUsername');
+  const days = parseInt(searchParams.get('days') || '30');
+  const interval = days - 1;
+
   const isEmployee = session.role === 'employee';
   const ownerFilter = isEmployee ? 'AND c.created_by = ?' : '';
   const ownerFilterWhere = isEmployee ? 'WHERE c.created_by = ?' : '';
   const ownerParams = isEmployee ? [session.userId] : [];
+
+  // If specific employee detail requested (For Admins)
+  if (employeeUsername && !isEmployee) {
+    try {
+      // Get employee details
+      const [empInfo] = await pool.query(`
+        SELECT u.id, u.username, ed.full_name, ed.basic_salary, ed.contract_target, ed.joining_date as joined_at
+        FROM admin_users u
+        JOIN employee_details ed ON u.id = ed.admin_id
+        WHERE u.username = ?
+      `, [employeeUsername]);
+
+      if (empInfo.length === 0) return NextResponse.json({ error: 'Employee not found' }, { status: 404 });
+      const emp = empInfo[0];
+
+      // Daily Trend (Dynamic Range)
+      const [dailyTrend] = await pool.query(`
+        SELECT 
+          d.log_date as date,
+          COALESCE(added.count, 0) as added,
+          COALESCE(sold.count, 0) as sold
+        FROM (
+          SELECT DATE_SUB(CURDATE(), INTERVAL (a.a + (10 * b.a) + (100 * c.a)) DAY) as log_date
+          FROM (SELECT 0 as a UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) as a
+          CROSS JOIN (SELECT 0 as a UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) as b
+          CROSS JOIN (SELECT 0 as a UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9) as c
+        ) d
+        LEFT JOIN (
+          SELECT DATE(created_at) as log_date, COUNT(*) as count 
+          FROM channels WHERE created_by = ? GROUP BY log_date
+        ) added ON d.log_date = added.log_date
+        LEFT JOIN (
+          SELECT DATE(sold_at) as log_date, COUNT(*) as count 
+          FROM channels WHERE created_by = ? AND is_sold = 1 GROUP BY log_date
+        ) sold ON d.log_date = sold.log_date
+        WHERE d.log_date >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
+          AND d.log_date <= CURDATE()
+        ORDER BY d.log_date ASC
+      `, [emp.id, emp.id, interval]);
+
+      // Velocity & Profit
+      const [metrics] = await pool.query(`
+        SELECT 
+          AVG(DATEDIFF(sold_at, created_at)) as avg_velocity,
+          SUM(sell_price - worker_cost) as total_profit,
+          MAX(daily_counts.added_count) as best_day_count
+        FROM channels c
+        LEFT JOIN (
+          SELECT DATE(created_at) as d, COUNT(*) as added_count FROM channels WHERE created_by = ? GROUP BY d
+        ) daily_counts ON DATE(c.created_at) = daily_counts.d
+        WHERE created_by = ?
+      `, [emp.id, emp.id]);
+
+      // Consistency (Updates in dynamic range)
+      const [consistency] = await pool.query(`
+        SELECT COUNT(DISTINCT DATE(update_date)) as update_days
+        FROM daily_updates du
+        JOIN channels c ON du.channel_id = c.id
+        WHERE c.created_by = ? AND du.update_date >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
+      `, [emp.id, days]);
+
+      return NextResponse.json({
+        employee: emp,
+        dailyTrend,
+        metrics: metrics[0],
+        consistency: consistency[0].update_days,
+        rangeDays: days
+      });
+    } catch (error) {
+      console.error('Detailed Analytics Error:', error);
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    }
+  }
 
   try {
     // 1. Summary Stats

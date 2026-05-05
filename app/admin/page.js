@@ -76,6 +76,9 @@ function AdminContent() {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [analytics, setAnalytics] = useState(null);
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [empDetail, setEmpDetail] = useState(null);
+  const [loadingEmp, setLoadingEmp] = useState(false);
   const [sources, setSources] = useState([]);
   const [editEmployee, setEditEmployee] = useState(null);
   const [myProfile, setMyProfile] = useState(null);
@@ -298,6 +301,28 @@ function AdminContent() {
       loadAnalytics();
     }
   }, [activeTab]);
+
+  const [analyticsRange, setAnalyticsRange] = useState(30);
+
+  useEffect(() => {
+    if (selectedEmployee) {
+      const fetchEmpDetail = async () => {
+        setLoadingEmp(true);
+        try {
+          const res = await fetch(`/api/admin/analytics?employeeUsername=${selectedEmployee}&days=${analyticsRange}`);
+          const data = await res.json();
+          setEmpDetail(data);
+        } catch (e) {
+          console.error(e);
+        } finally {
+          setLoadingEmp(false);
+        }
+      };
+      fetchEmpDetail();
+    } else {
+      setEmpDetail(null);
+    }
+  }, [selectedEmployee, analyticsRange]);
 
   useEffect(() => {
     if (user?.userId != null) {
@@ -1204,10 +1229,10 @@ function AdminContent() {
 
       {activeTab === 'performance' && analytics && user.role === 'admin' && (
         <div className="dashboard-content">
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
-             <div className="dashboard-card" style={{ minHeight: '350px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '0.8rem', marginBottom: '1.2rem' }}>
+             <div className="dashboard-card" style={{ minHeight: '350px', minWidth: 0 }}>
                 <div className="dashboard-card-title">Staff Performance Analysis</div>
-                <div style={{ flex: 1, padding: '1rem' }}>
+                <div style={{ flex: 1, padding: '1rem', minWidth: 0 }}>
                   <ResponsiveContainer width="100%" height={280}>
                       <BarChart data={analytics?.staffPerformance || []} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -1224,7 +1249,7 @@ function AdminContent() {
                  </div>
               </div>
 
-              <div className="dashboard-card" style={{ minHeight: '350px' }}>
+              <div className="dashboard-card" style={{ minHeight: '350px', minWidth: 0 }}>
                  <div className="dashboard-card-title">Inventory Share by Staff</div>
                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                    <ResponsiveContainer width="100%" height={280}>
@@ -1254,34 +1279,42 @@ function AdminContent() {
               </div>
            </div>
 
-           <div className="dashboard-card">
-              <div className="dashboard-card-title">Staff Performance Leaderboard</div>
-              <div className="table-responsive">
+            <div className="dashboard-card" style={{ padding: '0.6rem' }}>
+               <div className="dashboard-card-title" style={{ fontSize: '12px', marginBottom: '0.6rem' }}>Staff Performance Leaderboard</div>
+               <div className="table-responsive">
                 <table className="compact-table">
                   <thead>
                     <tr>
-                      <th>Staff Member</th>
-                      <th>Total Brought</th>
-                      <th>Sold Units</th>
-                      <th>Conv. Rate</th>
-                      <th style={{ textAlign: 'right' }}>Total Commission</th>
+                      <th style={{ padding: '0.4rem' }}>Staff Member</th>
+                      <th style={{ padding: '0.4rem' }}>Brought</th>
+                      <th style={{ padding: '0.4rem' }}>Sold</th>
+                      <th style={{ padding: '0.4rem' }}>Eff%</th>
+                      <th style={{ textAlign: 'right', padding: '0.4rem' }}>Commission</th>
                     </tr>
                   </thead>
                   <tbody>
                     {(analytics?.staffPerformance || []).map((staff, idx) => (
-                      <tr key={idx}>
-                        <td>
-                           <div style={{ fontWeight: 700, fontSize: '13px' }}>{staff.full_name}</div>
-                           <div style={{ fontSize: '10px', color: '#94a3b8' }}>@{staff.username}</div>
+                      <tr 
+                        key={idx} 
+                        onClick={() => setSelectedEmployee(selectedEmployee === staff.username ? null : staff.username)}
+                        style={{ 
+                          cursor: 'pointer', 
+                          background: selectedEmployee === staff.username ? '#f1f5f9' : 'transparent',
+                          transition: 'all 0.2s' 
+                        }}
+                      >
+                        <td data-label="Staff Member" style={{ padding: '0.4rem' }}>
+                           <div style={{ fontWeight: 700, fontSize: '11px', color: selectedEmployee === staff.username ? '#6366f1' : '#1e293b' }}>{staff.full_name}</div>
+                           <div style={{ fontSize: '8px', color: '#94a3b8' }}>@{staff.username}</div>
                         </td>
-                        <td><div style={{ fontWeight: 600 }}>{staff.total_brought} Units</div></td>
-                        <td><div style={{ fontWeight: 600, color: '#10b981' }}>{staff.sold_count} Sold</div></td>
-                        <td>
-                           <div style={{ fontSize: '11px', fontWeight: 700 }}>
-                              {staff.total_brought > 0 ? ((staff.sold_count / staff.total_brought) * 100).toFixed(1) : 0}%
+                        <td data-label="Brought" style={{ padding: '0.4rem' }}><div style={{ fontWeight: 600 }}>{staff.total_brought}</div></td>
+                        <td data-label="Sold" style={{ padding: '0.4rem' }}><div style={{ fontWeight: 600, color: '#10b981' }}>{staff.sold_count}</div></td>
+                        <td data-label="Eff%" style={{ padding: '0.4rem' }}>
+                           <div style={{ fontSize: '9px', fontWeight: 700 }}>
+                              {staff.total_brought > 0 ? ((staff.sold_count / staff.total_brought) * 100).toFixed(0) : 0}%
                            </div>
                         </td>
-                        <td style={{ textAlign: 'right' }}>
+                        <td data-label="Commission" style={{ textAlign: 'right', padding: '0.4rem' }}>
                            <div style={{ fontWeight: 800, color: '#0f172a' }}>৳{parseFloat(staff.earnings || 0).toLocaleString()}</div>
                         </td>
                       </tr>
@@ -1296,9 +1329,114 @@ function AdminContent() {
                   </tbody>
                 </table>
               </div>
-           </div>
-        </div>
-      )}
+            </div>
+
+            {/* Deep Dive Section - Compacted */}
+            <div className="dashboard-card" style={{ marginTop: '1rem', border: '1px solid #e2e8f0', minWidth: 0, minHeight: '300px', display: 'flex', flexDirection: 'column', padding: 0 }}>
+               {!selectedEmployee ? (
+                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center', color: '#94a3b8', background: '#fcfdfe' }}>
+                    <div style={{ fontSize: '32px', marginBottom: '0.5rem', opacity: 0.5 }}>📊</div>
+                    <div style={{ fontWeight: 700, color: '#475569', fontSize: '12px' }}>Staff Insight Panel</div>
+                    <p style={{ fontSize: '10px', maxWidth: '240px', marginTop: '0.25rem' }}>Select a staff member from the leaderboard above to analyze performance.</p>
+                 </div>
+               ) : (
+                 <>
+                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', padding: '0.6rem 0.8rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                         <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#6366f1' }}></div>
+                         <span style={{ fontWeight: 800, fontSize: '11px', color: '#1e293b' }}>
+                            {loadingEmp ? 'Loading intelligence...' : `Staff: ${empDetail?.employee?.full_name}`}
+                         </span>
+                         {!loadingEmp && empDetail?.employee?.joined_at && (
+                           Math.ceil((new Date() - new Date(empDetail.employee.joined_at)) / (1000 * 60 * 60 * 24)) < analyticsRange && (
+                             <span style={{ fontSize: '8px', color: '#f59e0b', fontWeight: 700, padding: '1px 4px', background: '#fffbeb', borderRadius: '3px', border: '1px solid #fef3c7' }}>
+                               ⚠️ Partial Tenure
+                             </span>
+                           )
+                         )}
+                      </div>
+                      <button className="btn btn-sm btn-outline" style={{ fontSize: '9px', padding: '2px 8px' }} onClick={() => setSelectedEmployee(null)}>Reset</button>
+                   </div>
+                   
+                   {loadingEmp ? (
+                     <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+                        <div className="spinner" style={{ width: '20px', height: '20px', border: '2px solid #f3f3f3', borderTop: '2px solid #6366f1', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                        <style>{`
+                          @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+                          @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+                        `}</style>
+                     </div>
+                   ) : empDetail && (
+                     <div style={{ flex: 1, animation: 'fadeIn 0.3s ease-out' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1px', background: '#e2e8f0', borderBottom: '1px solid #e2e8f0' }}>
+                           <div style={{ background: '#fff', padding: '0.75rem 0.8rem' }}>
+                              <div style={{ fontSize: '8px', textTransform: 'uppercase', fontWeight: 800, color: '#94a3b8', letterSpacing: '0.05em' }}>Sales Velocity</div>
+                              <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#0f172a' }}>{empDetail?.metrics?.avg_velocity ? parseFloat(empDetail.metrics.avg_velocity).toFixed(1) : '---'} <span style={{ fontSize: '9px', color: '#94a3b8' }}>d</span></div>
+                           </div>
+                           <div style={{ background: '#fff', padding: '0.75rem 0.8rem' }}>
+                              <div style={{ fontSize: '8px', textTransform: 'uppercase', fontWeight: 800, color: '#94a3b8', letterSpacing: '0.05em' }}>Net Contribution</div>
+                              <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#10b981' }}>৳{parseFloat(empDetail?.metrics?.total_profit || 0).toLocaleString()}</div>
+                           </div>
+                           <div style={{ background: '#fff', padding: '0.75rem 0.8rem' }}>
+                              <div style={{ fontSize: '8px', textTransform: 'uppercase', fontWeight: 800, color: '#94a3b8', letterSpacing: '0.05em' }}>Consistency</div>
+                              <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#0f172a' }}>{(( (empDetail?.consistency || 0) / 30) * 100).toFixed(0)}%</div>
+                           </div>
+                           <div style={{ background: '#fff', padding: '0.75rem 0.8rem' }}>
+                              <div style={{ fontSize: '8px', textTransform: 'uppercase', fontWeight: 800, color: '#94a3b8', letterSpacing: '0.05em' }}>Best Day</div>
+                              <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#6366f1' }}>{empDetail?.metrics?.best_day_count || 0} <span style={{ fontSize: '9px', color: '#94a3b8' }}>u</span></div>
+                           </div>
+                        </div>
+
+                        <div style={{ padding: '1rem', background: '#fff', position: 'relative' }}>
+                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                              <div style={{ fontSize: '11px', fontWeight: 800, color: '#1e293b' }}>Activity Trend ({analyticsRange}D)</div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                 <label style={{ fontSize: '9px', color: '#94a3b8', fontWeight: 600 }}>Period:</label>
+                                 <select 
+                                    value={analyticsRange} 
+                                    onChange={(e) => setAnalyticsRange(parseInt(e.target.value))}
+                                    style={{ fontSize: '9px', padding: '1px 4px', borderRadius: '4px', border: '1px solid #e2e8f0', background: '#f8fafc', color: '#475569', fontWeight: 700, cursor: 'pointer', outline: 'none' }}
+                                 >
+                                    <option value={7}>7 Days</option>
+                                    <option value={15}>15 Days</option>
+                                    <option value={30}>30 Days</option>
+                                    <option value={60}>2 Months</option>
+                                    <option value={90}>3 Months</option>
+                                 </select>
+                              </div>
+                           </div>
+                           <div style={{ width: '100%', height: '200px', minWidth: 0, position: 'relative' }}>
+                             <ResponsiveContainer width="100%" height="100%" debounce={300}>
+                               <LineChart data={empDetail?.dailyTrend || []} margin={{ top: 5, right: 10, left: -25, bottom: 0 }}>
+                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                 <XAxis 
+                                   dataKey="date" 
+                                   tick={{ fontSize: 8, fill: '#94a3b8' }} 
+                                   axisLine={{ stroke: '#f1f5f9' }}
+                                   tickLine={false}
+                                   tickFormatter={(val) => val ? new Date(val).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : ''}
+                                 />
+                                 <YAxis 
+                                   tick={{ fontSize: 8, fill: '#94a3b8' }} 
+                                   axisLine={false}
+                                   tickLine={false}
+                                 />
+                                 <Tooltip 
+                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', fontSize: '10px' }}
+                                 />
+                                 <Line type="monotone" dataKey="added" name="Added" stroke="#6366f1" strokeWidth={2} dot={{ r: 0 }} activeDot={{ r: 3, strokeWidth: 0 }} />
+                                 <Line type="monotone" dataKey="sold" name="Sold" stroke="#10b981" strokeWidth={2} dot={{ r: 0 }} activeDot={{ r: 3, strokeWidth: 0 }} />
+                               </LineChart>
+                             </ResponsiveContainer>
+                           </div>
+                        </div>
+                     </div>
+                   )}
+                 </>
+               )}
+            </div>
+          </div>
+        )}
 
       {showAddAdmin && (
         <div style={{ padding: '0.6rem 0.75rem', border: '1px solid #f1f5f9', borderRadius: '4px', marginBottom: '0.75rem', background: '#f8fafc' }}>

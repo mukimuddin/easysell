@@ -46,6 +46,8 @@ export async function PATCH(request, context) {
     if (data.is_sold !== undefined) {
       fields.push('is_sold = ?');
       params.push(data.is_sold ? 1 : 0);
+      fields.push('sold_at = ?');
+      params.push(data.is_sold ? new Date() : null);
     }
     if (data.sell_price !== undefined) {
       fields.push('sell_price = ?');
