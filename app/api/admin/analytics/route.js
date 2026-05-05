@@ -71,13 +71,14 @@ export async function GET() {
           u.username, 
           ed.full_name,
           COUNT(c.id) as total_brought,
-          SUM(CASE WHEN c.is_sold = 1 THEN 1 ELSE 0 END) as sold_count,
-          SUM(CASE WHEN c.is_sold = 1 THEN (ed.basic_salary / ed.contract_target) ELSE 0 END) as earnings
+          CAST(SUM(CASE WHEN c.is_sold = 1 THEN 1 ELSE 0 END) AS SIGNED) as sold_count,
+          CAST(SUM(CASE WHEN c.is_sold = 1 THEN (ed.basic_salary / ed.contract_target) ELSE 0 END) AS DECIMAL(10,2)) as earnings
         FROM admin_users u
         JOIN employee_details ed ON u.id = ed.admin_id
         LEFT JOIN channels c ON u.id = c.created_by
         WHERE u.role = 'employee' AND ed.contract_target > 0
         GROUP BY u.id, u.username, ed.full_name
+        HAVING COUNT(c.id) > 0
         ORDER BY total_brought DESC
       `);
     }

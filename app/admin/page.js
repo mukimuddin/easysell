@@ -294,7 +294,7 @@ function AdminContent() {
     setEditWorker(null);
     setEditSource(null);
     
-    if (activeTab === 'dashboard') {
+    if (activeTab === 'dashboard' || activeTab === 'performance') {
       loadAnalytics();
     }
   }, [activeTab]);
@@ -1204,12 +1204,12 @@ function AdminContent() {
 
       {activeTab === 'performance' && analytics && user.role === 'admin' && (
         <div className="dashboard-content">
-           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
-              <div className="dashboard-card" style={{ minHeight: '350px' }}>
-                 <div className="dashboard-card-title">Staff Acquisition Benchmark (Pillar Chart)</div>
-                 <div style={{ flex: 1, padding: '1rem' }}>
-                   <ResponsiveContainer width="100%" height={280}>
-                       <BarChart data={analytics?.staffPerformance || []} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+             <div className="dashboard-card" style={{ minHeight: '350px' }}>
+                <div className="dashboard-card-title">Staff Performance Analysis</div>
+                <div style={{ flex: 1, padding: '1rem' }}>
+                  <ResponsiveContainer width="100%" height={280}>
+                      <BarChart data={analytics?.staffPerformance || []} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                          <XAxis dataKey="username" axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 600 }} />
                          <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11 }} />
@@ -1286,6 +1286,13 @@ function AdminContent() {
                         </td>
                       </tr>
                     ))}
+                    {(analytics?.staffPerformance || []).length === 0 && (
+                      <tr>
+                        <td colSpan="5" style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8', fontSize: '12px' }}>
+                          No staff performance data found.
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
