@@ -776,12 +776,30 @@ function AdminContent() {
   };
 
   const handleToggle = async (id, status) => {
-    await fetch(`/api/admin/channels/${id}`, {
+    // Optimistic local state update
+    const newStatus = !status;
+    setChannels(prev => prev.map(c => 
+      c.id === id ? { ...c, is_selected: newStatus } : c
+    ));
+
+    // Background fetch
+    fetch(`/api/admin/channels/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ is_selected: !status }),
+      body: JSON.stringify({ is_selected: newStatus }),
+    }).then(res => {
+      if (res.ok) {
+        // Success: sync data silently if needed, or just let it be
+        loadData(); 
+      } else {
+        toast.error('Failed to update status on server');
+        loadData(); // Revert on failure
+      }
+    }).catch(err => {
+      console.error(err);
+      toast.error('Network error updating status');
+      loadData(); // Revert on failure
     });
-    loadData();
   };
 
   const handleUpdateEmployeeProfile = async (e) => {
