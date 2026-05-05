@@ -134,7 +134,8 @@ function AdminContent() {
       
       const matchesSearch = !filters.search || 
         c.channel_name?.toLowerCase().includes(filters.search.toLowerCase()) || 
-        c.channel_link?.toLowerCase().includes(filters.search.toLowerCase());
+        c.channel_link?.toLowerCase().includes(filters.search.toLowerCase()) ||
+        String(c.reg_no || '').includes(filters.search.trim());
       
       const matchesWorker = filters.workerId === 'all' || c.worker_id == filters.workerId;
       const matchesEmployee = filters.employeeId === 'all' || c.created_by == filters.employeeId;
@@ -165,7 +166,9 @@ function AdminContent() {
     let result = channels.filter(c => {
       if (!c.is_sold) return false;
       const matchesSearch = !filters.search || 
-        c.channel_name?.toLowerCase().includes(filters.search.toLowerCase());
+        c.channel_name?.toLowerCase().includes(filters.search.toLowerCase()) ||
+        c.channel_link?.toLowerCase().includes(filters.search.toLowerCase()) ||
+        String(c.reg_no || '').includes(filters.search.trim());
       const matchesWorker = filters.workerId === 'all' || c.worker_id == filters.workerId;
       const matchesEmployee = filters.employeeId === 'all' || c.created_by == filters.employeeId;
       return matchesSearch && matchesWorker && matchesEmployee;
