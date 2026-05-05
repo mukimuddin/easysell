@@ -3,6 +3,7 @@ import { createSession } from '@/lib/session';
 import pool from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import { ensureAdminBlockedColumn, isAdminUserBlocked } from '@/lib/adminBlocked';
+import { ensureAdminAuthVersionColumn, getAdminAuthVersion } from '@/lib/adminAuthVersion';
 
 export async function POST(request) {
   const ip = request.headers.get('x-forwarded-for') || '127.0.0.1';
@@ -47,8 +48,17 @@ export async function POST(request) {
 
     const user = users[0];
 
-    // 3. Verify Password
-    const isValid = await bcrypt.compare(password, user.password);
+    // 3. Verify Password (normalize DB value — mysql2 may return Buffer in some configs)
+    let storedHash = user.password;
+    if (storedHash == null || storedHash === '') {
+      storedHash = '';
+    } else if (Buffer.isBuffer(storedHash)) {
+      storedHash = storedHash.toString('utf8');
+    } else {
+      storedHash = String(storedHash);
+    }
+
+    const isValid = storedHash.length > 0 && (await bcrypt.compare(String(password), storedHash));
 
     if (isValid) {
       await ensureAdminBlockedColumn();
@@ -90,7 +100,10 @@ export async function POST(request) {
       // Success! Clear attempts
       await pool.execute('DELETE FROM login_attempts WHERE ip = ?', [ip]);
 
-      const { session, expiresAt } = await createSession(user.id, user.role);
+      await ensureAdminAuthVersionColumn();
+      const authVersion = await getAdminAuthVersion(user.id);
+
+      const { session, expiresAt } = await createSession(user.id, user.role, authVersion);
       const response = NextResponse.json({ success: true, role: user.role });
       
       response.cookies.set('adminToken', session, { 

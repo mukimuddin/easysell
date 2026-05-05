@@ -6,6 +6,7 @@ import bcrypt from 'bcryptjs';
 import { randomBytes } from 'node:crypto';
 import { emitEvent } from '@/lib/socket';
 import { ensureAdminBlockedColumn } from '@/lib/adminBlocked';
+import { bumpAdminAuthVersion } from '@/lib/adminAuthVersion';
 
 export async function GET() {
   const token = (await cookies()).get('adminToken')?.value;
@@ -106,7 +107,10 @@ export async function PATCH(request) {
       return NextResponse.json({ error: 'ID required' }, { status: 400 });
     }
 
-    const targetId = parseInt(id, 10);
+    const targetId = typeof id === 'number' && Number.isInteger(id) ? id : parseInt(String(id), 10);
+    if (!Number.isInteger(targetId) || targetId < 1) {
+      return NextResponse.json({ error: 'Invalid user id' }, { status: 400 });
+    }
 
     if (typeof is_blocked === 'boolean') {
       await ensureAdminBlockedColumn();
@@ -139,33 +143,86 @@ export async function PATCH(request) {
       return NextResponse.json({ success: true, is_blocked });
     }
 
-    const { newPassword, generate } = body;
+    const { newPassword, generate, username: newUsernameField } = body;
 
     const [usersPwd] = await pool.query(
-      'SELECT id, role FROM admin_users WHERE id = ? LIMIT 1',
+      'SELECT id, role, username FROM admin_users WHERE id = ? LIMIT 1',
       [targetId]
     );
     if (usersPwd.length === 0) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
     if (usersPwd[0].role !== 'employee') {
-      return NextResponse.json({ error: 'Only employee password can be managed here' }, { status: 400 });
+      return NextResponse.json({ error: 'Only employee accounts can be managed here' }, { status: 400 });
     }
 
-    const plainPassword = generate
-      ? randomBytes(6).toString('base64url')
-      : String(newPassword || '').trim();
+    const currentUsername = usersPwd[0].username != null ? String(usersPwd[0].username) : '';
 
-    if (plainPassword.length < 6) {
-      return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 });
+    let usernameChanged = false;
+    let updatedUsername = currentUsername;
+
+    if (newUsernameField !== undefined && newUsernameField !== null) {
+      const nu = String(newUsernameField).trim();
+      if (nu.length === 0) {
+        return NextResponse.json({ error: 'Username cannot be empty' }, { status: 400 });
+      }
+      if (nu.length < 2) {
+        return NextResponse.json({ error: 'Username must be at least 2 characters' }, { status: 400 });
+      }
+      if (nu !== currentUsername.trim()) {
+        const [dup] = await pool.query(
+          'SELECT id FROM admin_users WHERE username = ? AND id != ? LIMIT 1',
+          [nu, targetId]
+        );
+        if (dup.length > 0) {
+          return NextResponse.json({ error: 'This username is already taken' }, { status: 400 });
+        }
+        const [unameUpd] = await pool.execute('UPDATE admin_users SET username = ? WHERE id = ?', [
+          nu,
+          targetId,
+        ]);
+        if (unameUpd.affectedRows !== 1) {
+          return NextResponse.json({ error: 'Could not update username' }, { status: 404 });
+        }
+        usernameChanged = true;
+        updatedUsername = nu;
+      }
     }
 
-    const hashedPassword = await bcrypt.hash(plainPassword, 10);
-    await pool.execute('UPDATE admin_users SET password = ? WHERE id = ?', [hashedPassword, targetId]);
+    const shouldGenerate = generate === true;
+    const manualPwd = String(newPassword ?? '').trim();
+    const wantsPasswordChange = shouldGenerate || manualPwd.length > 0;
+
+    let plainPassword = null;
+    if (wantsPasswordChange) {
+      plainPassword = shouldGenerate ? randomBytes(6).toString('base64url') : manualPwd;
+      if (plainPassword.length < 6) {
+        return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 });
+      }
+      const hashedPassword = await bcrypt.hash(plainPassword, 10);
+      const [pwdUpd] = await pool.execute('UPDATE admin_users SET password = ? WHERE id = ?', [
+        hashedPassword,
+        targetId,
+      ]);
+      if (pwdUpd.affectedRows !== 1) {
+        return NextResponse.json({ error: 'Could not update password for this user' }, { status: 404 });
+      }
+    }
+
+    if (!usernameChanged && !wantsPasswordChange) {
+      return NextResponse.json(
+        { error: 'Provide a new username, a new password, or enable auto-generate' },
+        { status: 400 }
+      );
+    }
+
+    await bumpAdminAuthVersion(targetId);
+    emitEvent('staff-session-invalidate', { userId: targetId });
 
     return NextResponse.json({
       success: true,
-      generatedPassword: plainPassword,
+      ...(plainPassword != null ? { generatedPassword: plainPassword } : {}),
+      ...(usernameChanged ? { username: updatedUsername } : {}),
     });
   } catch (error) {
     console.error('Error updating user password:', error);

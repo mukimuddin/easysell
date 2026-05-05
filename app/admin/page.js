@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, Suspense, useMemo, Fragment } from 'react';
+import { useEffect, useState, useRef, Suspense, useMemo, Fragment } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { 
   HiKey, HiPlus, HiRefresh, HiPencilAlt, 
@@ -90,14 +90,17 @@ function AdminContent() {
   const [editWorker, setEditWorker] = useState(null);
   const [editSource, setEditSource] = useState(null);
   const [passwordTargetEmployee, setPasswordTargetEmployee] = useState(null);
+  const [employeeUsernameInput, setEmployeeUsernameInput] = useState('');
   const [employeePasswordInput, setEmployeePasswordInput] = useState('');
+  const [employeeResetPassword, setEmployeeResetPassword] = useState(true);
   const [showEmployeePassword, setShowEmployeePassword] = useState(false);
-  const [lastResetPassword, setLastResetPassword] = useState('');
+  const [employeePasswordResult, setEmployeePasswordResult] = useState(null);
+  const staffSessionRef = useRef({ userId: null, role: null });
 
   const [passwordTargetBuyer, setPasswordTargetBuyer] = useState(null);
   const [buyerPasswordInput, setBuyerPasswordInput] = useState('');
   const [showBuyerPassword, setShowBuyerPassword] = useState(false);
-  const [lastResetBuyerPassword, setLastResetBuyerPassword] = useState('');
+  const [buyerPasswordResult, setBuyerPasswordResult] = useState(null);
 
   // Bulk Sell State
   const [sellWorkerId, setSellWorkerId] = useState('');
@@ -297,18 +300,31 @@ function AdminContent() {
   }, [activeTab]);
 
   useEffect(() => {
+    if (user?.userId != null) {
+      staffSessionRef.current = { userId: user.userId, role: user.role };
+    }
+  }, [user]);
+
+  useEffect(() => {
     loadData();
 
-    // WebSocket listener for real-time updates
     const socket = getSocket();
     if (socket) {
       const handleUpdate = () => {
         console.log('Real-time update received');
         loadData();
       };
+      const handleSessionInvalidate = (data) => {
+        const { userId: uid, role } = staffSessionRef.current;
+        if (data?.userId != null && Number(data.userId) === Number(uid)) {
+          window.location.href = role === 'employee' ? '/employee/login' : '/admin/login';
+        }
+      };
       socket.on('channel-updated', handleUpdate);
+      socket.on('staff-session-invalidate', handleSessionInvalidate);
       return () => {
         socket.off('channel-updated', handleUpdate);
+        socket.off('staff-session-invalidate', handleSessionInvalidate);
       };
     }
   }, []);
@@ -413,48 +429,91 @@ function AdminContent() {
   };
 
   const handleEmployeePasswordReset = async () => {
-    if (!passwordTargetEmployee) return;
+    const target = passwordTargetEmployee;
+    if (!target) return;
+
+    const nextUsername = employeeUsernameInput.trim();
+    if (nextUsername.length < 2) {
+      toast.error('Username must be at least 2 characters');
+      return;
+    }
+
+    const usernameWillChange = nextUsername !== String(target.username || '').trim();
+    const useGenerated = employeePasswordInput.trim() === '';
+    if (employeeResetPassword && !useGenerated && employeePasswordInput.trim().length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+    if (!employeeResetPassword && !usernameWillChange) {
+      toast.error('Change the username or enable password reset');
+      return;
+    }
+
     setSubmitting(true);
     try {
-      const useGenerated = employeePasswordInput.trim() === '';
+      const payload = {
+        id: target.admin_id,
+        username: nextUsername,
+      };
+      if (employeeResetPassword) {
+        payload.newPassword = useGenerated ? undefined : employeePasswordInput.trim();
+        payload.generate = useGenerated;
+      }
+
       const res = await fetch('/api/admin/users', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: passwordTargetEmployee.admin_id,
-          newPassword: useGenerated ? undefined : employeePasswordInput.trim(),
-          generate: useGenerated,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
       if (!res.ok) {
-        toast.error(data.error || 'Failed to reset password');
+        toast.error(data.error || 'Failed to update staff account');
         return;
       }
 
       const shownPassword = data.generatedPassword;
+      const newLoginName = data.username || nextUsername;
+
+      setPasswordTargetEmployee(null);
+      setEmployeePasswordInput('');
+      setEmployeeUsernameInput('');
+      setEmployeeResetPassword(true);
+      setShowEmployeePassword(false);
+
       if (shownPassword) {
-        setLastResetPassword(shownPassword);
+        setEmployeePasswordResult({ loginUsername: newLoginName, password: shownPassword });
         try {
           await navigator.clipboard.writeText(shownPassword);
-          toast.success(`Password reset. New password copied: ${shownPassword}`);
+          toast.success(
+            data.username
+              ? 'Username & password updated. Copied. Staff signed out elsewhere.'
+              : 'Password updated. Copied. Staff signed out elsewhere.'
+          );
         } catch {
-          toast.success(`Password reset. New password: ${shownPassword}`);
+          toast.success(
+            data.username
+              ? 'Username & password updated. Copy from the dialog.'
+              : 'Password updated. Copy from the dialog.'
+          );
         }
       } else {
-        toast.success('Password reset successfully.');
+        if (data.username) {
+          toast.success('Username updated. Staff signed out elsewhere.');
+        }
+        loadData();
       }
     } catch (err) {
       console.error(err);
-      toast.error('Error resetting password');
+      toast.error('Error updating staff account');
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleBuyerPasswordReset = async () => {
-    if (!passwordTargetBuyer) return;
+    const target = passwordTargetBuyer;
+    if (!target) return;
     setSubmitting(true);
     try {
       const useGenerated = buyerPasswordInput.trim() === '';
@@ -462,7 +521,7 @@ function AdminContent() {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          id: passwordTargetBuyer.id,
+          id: target.id,
           newPassword: useGenerated ? undefined : buyerPasswordInput.trim(),
           generate: useGenerated,
         }),
@@ -475,16 +534,21 @@ function AdminContent() {
       }
 
       const shownPassword = data.generatedPassword;
-      if (shownPassword) {
-        setLastResetBuyerPassword(shownPassword);
-        try {
-          await navigator.clipboard.writeText(shownPassword);
-          toast.success(`Password reset. New password copied: ${shownPassword}`);
-        } catch {
-          toast.success(`Password reset. New password: ${shownPassword}`);
-        }
-      } else {
-        toast.success('Password reset successfully.');
+      if (!shownPassword) {
+        toast.error('Server did not return the new password');
+        return;
+      }
+
+      setPasswordTargetBuyer(null);
+      setBuyerPasswordInput('');
+      setShowBuyerPassword(false);
+      setBuyerPasswordResult({ label: target.full_name || target.email || 'Buyer', password: shownPassword });
+
+      try {
+        await navigator.clipboard.writeText(shownPassword);
+        toast.success('Password updated. Copied to clipboard.');
+      } catch {
+        toast.success('Password updated. Copy from the dialog.');
       }
     } catch (err) {
       console.error(err);
@@ -1745,12 +1809,14 @@ function AdminContent() {
                                 <button
                                   onClick={() => {
                                     setPasswordTargetEmployee(emp);
+                                    setEmployeeUsernameInput(emp.username || '');
                                     setEmployeePasswordInput('');
+                                    setEmployeeResetPassword(true);
                                     setShowEmployeePassword(false);
-                                    setLastResetPassword('');
+                                    setEmployeePasswordResult(null);
                                   }}
                                   className="btn btn-sm btn-outline"
-                                  title="Reset Password"
+                                  title="Staff login & password"
                                   style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                                 >
                                   <HiKey />
@@ -1839,7 +1905,7 @@ function AdminContent() {
                                     setPasswordTargetBuyer(buyer);
                                     setBuyerPasswordInput('');
                                     setShowBuyerPassword(false);
-                                    setLastResetBuyerPassword('');
+                                    setBuyerPasswordResult(null);
                                   }}
                                   className="btn btn-sm btn-outline"
                                   title="Reset Password"
@@ -2042,8 +2108,8 @@ function AdminContent() {
            <form onSubmit={handleUpdateEmployeeProfile}>
              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.5rem', marginBottom: '0.5rem' }}>
                <div className="compact-form-group" style={{ marginBottom: 0 }}><label>Full Name</label><input name="full_name" defaultValue={editEmployee.full_name} className="compact-form-control" placeholder="Legal Name" /></div>
-               <div className="compact-form-group" style={{ marginBottom: 0 }}><label>Father's Name</label><input name="father_name" defaultValue={editEmployee.father_name} className="compact-form-control" /></div>
-               <div className="compact-form-group" style={{ marginBottom: 0 }}><label>Mother's Name</label><input name="mother_name" defaultValue={editEmployee.mother_name} className="compact-form-control" /></div>
+               <div className="compact-form-group" style={{ marginBottom: 0 }}><label>{'Father\u2019s Name'}</label><input name="father_name" defaultValue={editEmployee.father_name} className="compact-form-control" /></div>
+               <div className="compact-form-group" style={{ marginBottom: 0 }}><label>{'Mother\u2019s Name'}</label><input name="mother_name" defaultValue={editEmployee.mother_name} className="compact-form-control" /></div>
                <div className="compact-form-group" style={{ marginBottom: 0 }}><label>Phone</label><input name="phone" defaultValue={editEmployee.phone} className="compact-form-control" /></div>
                <div className="compact-form-group" style={{ marginBottom: 0 }}><label>Email</label><input name="email" type="email" defaultValue={editEmployee.email} className="compact-form-control" /></div>
                <div className="compact-form-group" style={{ marginBottom: 0 }}><label>Date of Birth</label><input name="dob" type="date" defaultValue={editEmployee.dob?.split('T')[0]} className="compact-form-control" /></div>
@@ -2171,40 +2237,68 @@ function AdminContent() {
       )}
 
       {passwordTargetEmployee && (
-        <div className="modal-overlay">
-          <div className="modal-content">
+        <div
+          className="modal-overlay"
+          role="presentation"
+          onClick={() => {
+            setPasswordTargetEmployee(null);
+            setEmployeeUsernameInput('');
+            setEmployeePasswordInput('');
+            setEmployeeResetPassword(true);
+            setShowEmployeePassword(false);
+          }}
+        >
+          <div className="modal-content" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
             <div style={{ marginBottom: '1rem', fontWeight: 700 }}>
-              Reset Password: {passwordTargetEmployee.username}
+              Staff account: {passwordTargetEmployee.username}
             </div>
 
             <div className="compact-form-group">
-              <label>New Password (optional)</label>
-              <div style={{ display: 'flex', gap: '0.4rem' }}>
-                <input
-                  type={showEmployeePassword ? 'text' : 'password'}
-                  className="compact-form-control"
-                  value={employeePasswordInput}
-                  onChange={(e) => setEmployeePasswordInput(e.target.value)}
-                  placeholder="Leave empty to auto-generate"
-                />
-                <button
-                  type="button"
-                  className="btn btn-sm btn-outline"
-                  onClick={() => setShowEmployeePassword((prev) => !prev)}
-                  title={showEmployeePassword ? 'Hide' : 'Show'}
-                >
-                  {showEmployeePassword ? <HiEyeOff /> : <HiEye />}
-                </button>
-              </div>
+              <label>Username</label>
+              <input
+                type="text"
+                className="compact-form-control"
+                value={employeeUsernameInput}
+                onChange={(e) => setEmployeeUsernameInput(e.target.value)}
+                autoComplete="off"
+              />
               <div style={{ fontSize: '11px', color: '#64748b', marginTop: '0.4rem' }}>
-                Empty রাখলে auto-generated temporary password set হবে।
+                একই নাম অন্য ইউজার নিলে সেভ হবে না। পরিবর্তন হলে স্টাফের সব ডিভাইস থেকে লগআউট হবে।
               </div>
             </div>
 
-            {lastResetPassword && (
-              <div style={{ border: '1px solid #e2e8f0', borderRadius: '6px', padding: '0.6rem', marginBottom: '0.8rem' }}>
-                <div style={{ fontSize: '10px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Latest Password</div>
-                <div style={{ marginTop: '0.25rem', fontWeight: 700 }}>{lastResetPassword}</div>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '12px', marginBottom: '0.75rem', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={employeeResetPassword}
+                onChange={(e) => setEmployeeResetPassword(e.target.checked)}
+              />
+              <span>Set or reset password</span>
+            </label>
+
+            {employeeResetPassword && (
+              <div className="compact-form-group">
+                <label>New password</label>
+                <div style={{ display: 'flex', gap: '0.4rem' }}>
+                  <input
+                    type={showEmployeePassword ? 'text' : 'password'}
+                    className="compact-form-control"
+                    value={employeePasswordInput}
+                    onChange={(e) => setEmployeePasswordInput(e.target.value)}
+                    placeholder="Leave empty to auto-generate"
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline"
+                    onClick={() => setShowEmployeePassword((prev) => !prev)}
+                    title={showEmployeePassword ? 'Hide' : 'Show'}
+                  >
+                    {showEmployeePassword ? <HiEyeOff /> : <HiEye />}
+                  </button>
+                </div>
+                <div style={{ fontSize: '11px', color: '#64748b', marginTop: '0.4rem' }}>
+                  Empty রাখলে auto-generated temporary password set হবে।
+                </div>
               </div>
             )}
 
@@ -2213,8 +2307,10 @@ function AdminContent() {
                 type="button"
                 onClick={() => {
                   setPasswordTargetEmployee(null);
+                  setEmployeeUsernameInput('');
                   setEmployeePasswordInput('');
-                  setLastResetPassword('');
+                  setEmployeeResetPassword(true);
+                  setShowEmployeePassword(false);
                 }}
                 className="btn btn-sm btn-outline"
                 style={{ flex: 1 }}
@@ -2228,7 +2324,67 @@ function AdminContent() {
                 className="btn btn-sm btn-approve"
                 style={{ flex: 1 }}
               >
-                {submitting ? '...' : 'Reset'}
+                {submitting ? '...' : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {employeePasswordResult && (
+        <div
+          className="modal-overlay"
+          role="presentation"
+          onClick={() => {
+            setEmployeePasswordResult(null);
+            loadData();
+          }}
+        >
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div style={{ marginBottom: '0.5rem', fontWeight: 700 }}>
+              নতুন পাসওয়ার্ড — লগইন ইউজারনেম:{' '}
+              <span style={{ fontFamily: 'ui-monospace, monospace' }}>{employeePasswordResult.loginUsername}</span>
+            </div>
+            <div
+              style={{
+                border: '1px solid #e2e8f0',
+                borderRadius: '6px',
+                padding: '0.75rem',
+                marginBottom: '1rem',
+                fontFamily: 'ui-monospace, monospace',
+                fontSize: '13px',
+                fontWeight: 700,
+                wordBreak: 'break-all',
+              }}
+            >
+              {employeePasswordResult.password}
+            </div>
+            <div style={{ display: 'flex', gap: '0.4rem' }}>
+              <button
+                type="button"
+                className="btn btn-sm btn-outline"
+                style={{ flex: 1 }}
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(employeePasswordResult.password);
+                    toast.success('Copied');
+                  } catch {
+                    toast.error('Could not copy');
+                  }
+                }}
+              >
+                Copy
+              </button>
+              <button
+                type="button"
+                className="btn btn-sm btn-approve"
+                style={{ flex: 1 }}
+                onClick={() => {
+                  setEmployeePasswordResult(null);
+                  loadData();
+                }}
+              >
+                Done
               </button>
             </div>
           </div>
@@ -2236,8 +2392,16 @@ function AdminContent() {
       )}
 
       {passwordTargetBuyer && (
-        <div className="modal-overlay">
-          <div className="modal-content">
+        <div
+          className="modal-overlay"
+          role="presentation"
+          onClick={() => {
+            setPasswordTargetBuyer(null);
+            setBuyerPasswordInput('');
+            setShowBuyerPassword(false);
+          }}
+        >
+          <div className="modal-content" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
             <div style={{ marginBottom: '1rem', fontWeight: 700 }}>
               Reset Buyer Password: {passwordTargetBuyer.full_name}
             </div>
@@ -2266,20 +2430,13 @@ function AdminContent() {
               </div>
             </div>
 
-            {lastResetBuyerPassword && (
-              <div style={{ border: '1px solid #e2e8f0', borderRadius: '6px', padding: '0.6rem', marginBottom: '0.8rem' }}>
-                <div style={{ fontSize: '10px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Latest Password</div>
-                <div style={{ marginTop: '0.25rem', fontWeight: 700 }}>{lastResetBuyerPassword}</div>
-              </div>
-            )}
-
             <div style={{ display: 'flex', gap: '0.4rem', marginTop: '1.2rem' }}>
               <button
                 type="button"
                 onClick={() => {
                   setPasswordTargetBuyer(null);
                   setBuyerPasswordInput('');
-                  setLastResetBuyerPassword('');
+                  setShowBuyerPassword(false);
                 }}
                 className="btn btn-sm btn-outline"
                 style={{ flex: 1 }}
@@ -2294,6 +2451,55 @@ function AdminContent() {
                 style={{ flex: 1 }}
               >
                 {submitting ? '...' : 'Reset'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {buyerPasswordResult && (
+        <div className="modal-overlay" role="presentation" onClick={() => setBuyerPasswordResult(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div style={{ marginBottom: '1rem', fontWeight: 700 }}>
+              নতুন পাসওয়ার্ড — {buyerPasswordResult.label}
+            </div>
+            <div
+              style={{
+                border: '1px solid #e2e8f0',
+                borderRadius: '6px',
+                padding: '0.75rem',
+                marginBottom: '1rem',
+                fontFamily: 'ui-monospace, monospace',
+                fontSize: '13px',
+                fontWeight: 700,
+                wordBreak: 'break-all',
+              }}
+            >
+              {buyerPasswordResult.password}
+            </div>
+            <div style={{ display: 'flex', gap: '0.4rem' }}>
+              <button
+                type="button"
+                className="btn btn-sm btn-outline"
+                style={{ flex: 1 }}
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(buyerPasswordResult.password);
+                    toast.success('Copied');
+                  } catch {
+                    toast.error('Could not copy');
+                  }
+                }}
+              >
+                Copy
+              </button>
+              <button
+                type="button"
+                className="btn btn-sm btn-approve"
+                style={{ flex: 1 }}
+                onClick={() => setBuyerPasswordResult(null)}
+              >
+                Done
               </button>
             </div>
           </div>

@@ -11,6 +11,7 @@ model admin_users {
   id               Int               @id @default(autoincrement())
   username         String?           @db.VarChar(50)
   password         String?           @db.VarChar(255)
+  auth_version     Int?              @default(0)
   is_blocked       Int?              @default(0) @db.TinyInt
   role             admin_users_role? @default(employee)
   workers          workers[]

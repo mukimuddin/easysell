@@ -123,17 +123,27 @@ export async function PATCH(request) {
       return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
     }
 
-    if (newPassword || generate) {
-      const plainPassword = generate
-        ? randomBytes(6).toString('base64url')
-        : String(newPassword || '').trim();
+    const shouldGenerate = generate === true;
+    const manualPwd = String(newPassword ?? '').trim();
+    if (shouldGenerate || manualPwd.length > 0) {
+      const plainPassword = shouldGenerate ? randomBytes(6).toString('base64url') : manualPwd;
 
       if (plainPassword.length < 6) {
         return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 });
       }
 
       const hashedPassword = await bcrypt.hash(plainPassword, 10);
-      await pool.execute('UPDATE buyer_accounts SET password = ? WHERE id = ?', [hashedPassword, id]);
+      const buyerId = typeof id === 'number' && Number.isInteger(id) ? id : parseInt(String(id), 10);
+      if (!Number.isInteger(buyerId) || buyerId < 1) {
+        return NextResponse.json({ error: 'Invalid buyer id' }, { status: 400 });
+      }
+      const [upd] = await pool.execute('UPDATE buyer_accounts SET password = ? WHERE id = ?', [
+        hashedPassword,
+        buyerId,
+      ]);
+      if (upd.affectedRows !== 1) {
+        return NextResponse.json({ error: 'Could not update password for this buyer' }, { status: 404 });
+      }
 
       return NextResponse.json({
         success: true,
