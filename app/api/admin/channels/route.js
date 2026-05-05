@@ -7,6 +7,7 @@ import {
   assertChannelGmailUnique,
   ChannelGuardError,
 } from '@/lib/channelSubmitGuards';
+import { getNextChannelRegNo, withChannelRegNoLock } from '@/lib/channelRegNo';
 
 export async function GET() {
   const token = (await cookies()).get('adminToken')?.value;
@@ -55,6 +56,7 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const conn = await pool.getConnection();
   try {
     const { channel_name, channel_link, whatsapp, worker_id, open_date, sell_price, worker_cost, gmail, password } =
       await request.json();
@@ -63,29 +65,29 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Name and Link are required' }, { status: 400 });
     }
 
-    const { canonUrl } = await assertChannelLinkAllowed(pool, String(channel_link).trim());
-    await assertChannelGmailUnique(pool, gmail || null);
+    const result = await withChannelRegNoLock(conn, async () => {
+      const { canonUrl } = await assertChannelLinkAllowed(conn, String(channel_link).trim());
+      await assertChannelGmailUnique(conn, gmail || null);
 
-    // Calculate next reg_no
-    const [regRows] = await pool.query('SELECT MAX(reg_no) as maxReg FROM channels');
-    const nextReg = (regRows[0].maxReg || 1000) + 1;
-
-    const [result] = await pool.execute(
-      'INSERT INTO channels (channel_name, channel_link, whatsapp, worker_id, open_date, sell_price, worker_cost, created_by, gmail, password, reg_no) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [
-        channel_name,
-        canonUrl,
-        whatsapp || null,
-        worker_id || null,
-        open_date || null,
-        sell_price || 0,
-        worker_cost || 0,
-        session.userId,
-        gmail || null,
-        password || null,
-        nextReg,
-      ]
-    );
+      const nextReg = await getNextChannelRegNo(conn);
+      const [insertResult] = await conn.execute(
+        'INSERT INTO channels (channel_name, channel_link, whatsapp, worker_id, open_date, sell_price, worker_cost, created_by, gmail, password, reg_no) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [
+          channel_name,
+          canonUrl,
+          whatsapp || null,
+          worker_id || null,
+          open_date || null,
+          sell_price || 0,
+          worker_cost || 0,
+          session.userId,
+          gmail || null,
+          password || null,
+          nextReg,
+        ]
+      );
+      return insertResult;
+    });
 
     return NextResponse.json({ success: true, id: result.insertId });
   } catch (error) {
@@ -94,5 +96,7 @@ export async function POST(request) {
     }
     console.error('Error creating channel:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  } finally {
+    conn.release();
   }
 }

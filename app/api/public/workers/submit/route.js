@@ -10,6 +10,7 @@ import {
   assertChannelGmailUnique,
   ChannelGuardError,
 } from '@/lib/channelSubmitGuards';
+import { getNextChannelRegNo, withChannelRegNoLock } from '@/lib/channelRegNo';
 
 const MAX_CHANNELS = 25;
 
@@ -89,26 +90,30 @@ export async function POST(request) {
 
     const displayWaForChannel = canon;
 
-    for (const ch of channels) {
-      const { canonUrl } = await assertChannelLinkAllowed(conn, String(ch.channel_link).trim());
-      const gmailVal = ch.gmail ? String(ch.gmail).trim() : '';
-      await assertChannelGmailUnique(conn, gmailVal || null);
+    await withChannelRegNoLock(conn, async () => {
+      for (const ch of channels) {
+        const { canonUrl } = await assertChannelLinkAllowed(conn, String(ch.channel_link).trim());
+        const gmailVal = ch.gmail ? String(ch.gmail).trim() : '';
+        await assertChannelGmailUnique(conn, gmailVal || null);
+        const nextReg = await getNextChannelRegNo(conn);
 
-      await conn.execute(
-        `INSERT INTO channels (channel_name, channel_link, whatsapp, worker_id, open_date, sell_price, worker_cost, created_by, gmail, password)
-         VALUES (?, ?, ?, ?, ?, 0, 0, ?, ?, ?)`,
-        [
-          String(ch.channel_name).trim(),
-          canonUrl,
-          displayWaForChannel,
-          workerId,
-          ch.open_date ? String(ch.open_date).trim() || null : null,
-          dealer,
-          gmailVal || null,
-          ch.password ? String(ch.password).trim() || null : null,
-        ]
-      );
-    }
+        await conn.execute(
+          `INSERT INTO channels (channel_name, channel_link, whatsapp, worker_id, open_date, sell_price, worker_cost, created_by, gmail, password, reg_no)
+           VALUES (?, ?, ?, ?, ?, 0, 0, ?, ?, ?, ?)`,
+          [
+            String(ch.channel_name).trim(),
+            canonUrl,
+            displayWaForChannel,
+            workerId,
+            ch.open_date ? String(ch.open_date).trim() || null : null,
+            dealer,
+            gmailVal || null,
+            ch.password ? String(ch.password).trim() || null : null,
+            nextReg,
+          ]
+        );
+      }
+    });
 
     await conn.commit();
     emitEvent('channel-updated', { source: 'public-worker-submit' });
