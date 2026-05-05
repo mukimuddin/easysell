@@ -632,17 +632,44 @@ function AdminContent() {
   const handleAddDailyUpdate = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
-    const res = await fetch('/api/admin/daily-updates', {
+    
+    const channel_id = activeChannel.id;
+    const shorts_count = parseInt(formData.get('shorts_count')) || 0;
+    const sub_count = parseInt(formData.get('sub_count')) || 0;
+    const status = formData.get('status');
+
+    // Optimistic UI Update: close modal immediately
+    setActiveChannel(null);
+
+    // Update local channel state optimistically
+    setChannels(prev => prev.map(c => 
+      c.id === channel_id 
+        ? { ...c, shorts_count, sub_count, status } 
+        : c
+    ));
+
+    // Background fetch
+    fetch('/api/admin/daily-updates', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        channel_id: activeChannel.id,
-        shorts_count: parseInt(formData.get('shorts_count')) || 0,
-        sub_count: parseInt(formData.get('sub_count')) || 0,
-        status: formData.get('status')
+        channel_id,
+        shorts_count,
+        sub_count,
+        status
       }),
+    }).then(res => {
+      if (res.ok) {
+        loadData();
+      } else {
+        toast.error('Failed to update stats in background');
+        loadData();
+      }
+    }).catch(err => {
+      console.error(err);
+      toast.error('Error updating stats');
+      loadData();
     });
-    if (res.ok) { setActiveChannel(null); loadData(); }
   };
 
    const handleBulkSell = async (e) => {

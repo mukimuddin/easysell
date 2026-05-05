@@ -26,10 +26,9 @@ export async function POST(request) {
           u.shorts_count,
           u.status AS kpi_status
        FROM channels c
-       LEFT JOIN (
-         SELECT * FROM daily_updates
-         WHERE id IN (SELECT MAX(id) FROM daily_updates GROUP BY channel_id)
-       ) u ON c.id = u.channel_id
+       LEFT JOIN daily_updates u ON u.id = (
+         SELECT MAX(id) FROM daily_updates d2 WHERE d2.channel_id = c.id
+       )
        WHERE c.worker_id = ?
        ORDER BY c.created_at DESC`,
       [worker.id]
