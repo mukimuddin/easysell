@@ -22,7 +22,8 @@ export async function GET() {
         c.open_date,
         c.created_at,
         w.name AS worker_name,
-        u.sub_count
+        u.sub_count,
+        c.reg_no
     `;
 
     if (isUnlocked) {

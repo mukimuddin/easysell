@@ -1641,7 +1641,7 @@ function AdminContent() {
                 <>
                   <thead>
                     <tr>
-                      <th>SL.</th>
+                      <th>Reg.</th>
                       <th>Channel</th>
                       <th>Specialist</th>
                       {user.role === 'admin' && <th>Added</th>}
@@ -1655,7 +1655,7 @@ function AdminContent() {
                     {activeChannels.map((c, idx) => (
                       <Fragment key={c.id}>
                         <tr key={c.id}>
-                          <td data-label="SL.">{idx + 1}</td>
+                          <td data-label="Reg.">{c.reg_no || (idx + 1)}</td>
                           <td data-label="Channel">
                             <div className="cell-content">
                               <div style={{ fontWeight: 600, fontSize: '12.5px' }}><a href={c.channel_link} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>{c.channel_name}</a></div>
@@ -1713,7 +1713,7 @@ function AdminContent() {
                 <>
                   <thead>
                     <tr>
-                      <th>SL.</th>
+                      <th>Reg.</th>
                       <th>Channel</th>
                       <th>Specialist</th>
                       {user.role === 'admin' && <th>Added By</th>}
@@ -1726,7 +1726,7 @@ function AdminContent() {
                     {activeChannels.map((c, idx) => (
                       <Fragment key={c.id}>
                         <tr key={c.id}>
-                          <td data-label="SL.">{idx + 1}</td>
+                          <td data-label="Reg.">{c.reg_no || (idx + 1)}</td>
                           <td data-label="Channel"><div style={{ fontWeight: 600, fontSize: '12.5px' }}><a href={c.channel_link} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>{c.channel_name}</a></div></td>
                           <td data-label="Specialist"><div style={{ fontSize: '12px' }}>{c.worker_name || 'PENDING'}</div></td>
                           {user.role === 'admin' && <td data-label="Added By"><div style={{ fontSize: '11px', color: '#64748b' }}>{c.creator_name || '---'}</div></td>}
@@ -1770,7 +1770,7 @@ function AdminContent() {
                 <>
                   <thead>
                     <tr>
-                      <th>SL.</th>
+                      <th>Reg.</th>
                       <th>Channel</th>
                       <th>Price (৳)</th>
                       <th>Cost (৳)</th>
@@ -1781,7 +1781,7 @@ function AdminContent() {
                   <tbody>
                     {soldChannels.map((c, idx) => (
                       <tr key={c.id}>
-                        <td data-label="SL.">{idx + 1}</td>
+                        <td data-label="Reg.">{c.reg_no || (idx + 1)}</td>
                         <td data-label="Channel"><div><a href={c.channel_link} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none', fontSize: '12.5px', fontWeight: 600 }}>{c.channel_name}</a></div></td>
                         <td data-label="Price"><div style={{ color: '#059669', fontSize: '12px', fontWeight: 600 }}>৳{c.sell_price}</div></td>
                         <td data-label="Cost"><div style={{ color: '#dc2626', fontSize: '12px', fontWeight: 600 }}>৳{c.worker_cost}</div></td>

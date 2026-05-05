@@ -90,7 +90,8 @@ export default function BuyerPanelPage() {
     return channels.filter((channel) => {
       return (
         String(channel.channel_name || '').toLowerCase().includes(text) ||
-        String(channel.worker_name || '').toLowerCase().includes(text)
+        String(channel.worker_name || '').toLowerCase().includes(text) ||
+        String(channel.reg_no || '').includes(text)
       );
     });
   }, [channels, search]);
@@ -257,7 +258,7 @@ export default function BuyerPanelPage() {
           <table className="compact-table">
             <thead>
               <tr>
-                <th>SL.</th>
+                <th>Reg.</th>
                 <th>Channel</th>
                 <th>Specialist</th>
                 <th>Open Date</th>
@@ -269,7 +270,19 @@ export default function BuyerPanelPage() {
             <tbody>
               {paginatedChannels.map((channel, idx) => (
                 <tr key={channel.id}>
-                  <td>{(page - 1) * pageSize + idx + 1}</td>
+                  <td>
+                    <span style={{ 
+                      background: '#f1f5f9', 
+                      color: '#475569', 
+                      padding: '2px 6px', 
+                      borderRadius: '4px', 
+                      fontSize: '10px', 
+                      fontWeight: 700,
+                      border: '1px solid #e2e8f0'
+                    }}>
+                      {channel.reg_no || ((page - 1) * pageSize + idx + 1)}
+                    </span>
+                  </td>
                   <td>
                     <a href={channel.channel_link} target="_blank" rel="noreferrer" style={{ color: 'inherit', textDecoration: 'none', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
                       <HiCube style={{ color: '#64748b' }} />
@@ -334,8 +347,18 @@ export default function BuyerPanelPage() {
             paginatedChannels.map((channel, idx) => (
               <div key={channel.id} style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0.5rem', marginBottom: '0.45rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.35rem', marginBottom: '0.25rem' }}>
-                  <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 700 }}>
-                    #{(page - 1) * pageSize + idx + 1}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <span style={{ 
+                      background: '#f8fafc', 
+                      color: '#64748b', 
+                      padding: '1px 5px', 
+                      borderRadius: '4px', 
+                      fontSize: '9px', 
+                      fontWeight: 800,
+                      border: '1px solid #e2e8f0'
+                    }}>
+                      REG: {channel.reg_no || ((page - 1) * pageSize + idx + 1)}
+                    </span>
                   </div>
                   <div style={{ display: 'flex', gap: '0.3rem' }}>
                     <CopyButton 

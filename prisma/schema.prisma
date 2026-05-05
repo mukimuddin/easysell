@@ -54,6 +54,7 @@ model channels {
   created_by   Int?      @default(1)
   gmail        String?   @db.VarChar(255)
   password     String?   @db.VarChar(255)
+  reg_no       Int?      @unique
 
   @@index([worker_id], map: "fk_1")
 }
