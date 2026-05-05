@@ -66,6 +66,8 @@ export default function BuyerPanelPage() {
     if (sortBy === 'name_desc') list.sort((a, b) => String(b.channel_name || '').localeCompare(String(a.channel_name || '')));
     if (sortBy === 'date_asc') list.sort((a, b) => new Date(a.open_date || a.created_at || 0) - new Date(b.open_date || b.created_at || 0));
     if (sortBy === 'date_desc') list.sort((a, b) => new Date(b.open_date || b.created_at || 0) - new Date(a.open_date || a.created_at || 0));
+    if (sortBy === 'subs_desc') list.sort((a, b) => (b.sub_count || 0) - (a.sub_count || 0));
+    if (sortBy === 'subs_asc') list.sort((a, b) => (a.sub_count || 0) - (b.sub_count || 0));
     return list;
   }, [filteredChannels, sortBy]);
 
@@ -196,6 +198,8 @@ export default function BuyerPanelPage() {
             <option value="date_asc">Oldest First</option>
             <option value="name_asc">Name A-Z</option>
             <option value="name_desc">Name Z-A</option>
+            <option value="subs_desc">High Subs</option>
+            <option value="subs_asc">Low Subs</option>
           </select>
           <select
             className="compact-form-control"
@@ -222,6 +226,8 @@ export default function BuyerPanelPage() {
                 <th>Channel</th>
                 <th>Specialist</th>
                 <th>Open Date</th>
+                <th>Subscribers</th>
+                {profile?.credentials_unlocked === 1 && <th>Credentials</th>}
                 <th style={{ textAlign: 'right' }}>Action</th>
               </tr>
             </thead>
@@ -237,6 +243,19 @@ export default function BuyerPanelPage() {
                   </td>
                   <td>{channel.worker_name || 'N/A'}</td>
                   <td>{channel.open_date ? new Date(channel.open_date).toLocaleDateString('en-GB') : 'N/A'}</td>
+                  <td><div style={{ fontWeight: 600 }}>{channel.sub_count || 0}</div></td>
+                  {profile?.credentials_unlocked === 1 && (
+                    <td>
+                      {(channel.gmail || channel.password) ? (
+                        <div style={{ fontSize: '10px', display: 'flex', flexDirection: 'column', gap: '0.1rem' }}>
+                          <div style={{ color: '#475569' }}><strong>E:</strong> {channel.gmail || '-'}</div>
+                          <div style={{ color: '#475569' }}><strong>P:</strong> {channel.password || '-'}</div>
+                        </div>
+                      ) : (
+                        <span style={{ fontSize: '10px', color: '#94a3b8' }}>None</span>
+                      )}
+                    </td>
+                  )}
                   <td style={{ textAlign: 'right' }}>
                     <a
                       href={channel.channel_link}
@@ -276,6 +295,13 @@ export default function BuyerPanelPage() {
                 <div style={{ fontWeight: 700, fontSize: '12px', color: '#0f172a', marginBottom: '0.2rem' }}>{channel.channel_name}</div>
                 <div style={{ fontSize: '11px', color: '#64748b' }}>Specialist: {channel.worker_name || 'N/A'}</div>
                 <div style={{ fontSize: '11px', color: '#64748b' }}>Open Date: {channel.open_date ? new Date(channel.open_date).toLocaleDateString('en-GB') : 'N/A'}</div>
+                <div style={{ fontSize: '11px', color: '#64748b' }}>Subs: <strong style={{ color: '#0f172a' }}>{channel.sub_count || 0}</strong></div>
+                {profile?.credentials_unlocked === 1 && (channel.gmail || channel.password) && (
+                  <div style={{ marginTop: '0.3rem', padding: '0.3rem', background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: '4px', fontSize: '10px', display: 'flex', flexDirection: 'column', gap: '0.1rem' }}>
+                    <div style={{ color: '#475569' }}><strong>E:</strong> {channel.gmail || '-'}</div>
+                    <div style={{ color: '#475569' }}><strong>P:</strong> {channel.password || '-'}</div>
+                  </div>
+                )}
               </div>
             ))
           ) : (

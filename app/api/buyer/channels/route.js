@@ -12,16 +12,32 @@ export async function GET() {
   }
 
   try {
-    const [rows] = await pool.query(
-      `SELECT
+    const [buyers] = await pool.query('SELECT credentials_unlocked FROM buyer_accounts WHERE id = ?', [session.userId]);
+    const isUnlocked = buyers[0]?.credentials_unlocked === 1;
+
+    let selectCols = `
         c.id,
         c.channel_name,
         c.channel_link,
         c.open_date,
         c.created_at,
-        w.name AS worker_name
+        w.name AS worker_name,
+        u.sub_count
+    `;
+
+    if (isUnlocked) {
+      selectCols += `, c.gmail, c.password`;
+    }
+
+    const [rows] = await pool.query(
+      `SELECT ${selectCols}
       FROM channels c
       LEFT JOIN workers w ON c.worker_id = w.id
+      LEFT JOIN (
+        SELECT d1.* FROM daily_updates d1
+        JOIN (SELECT channel_id, MAX(id) as mid FROM daily_updates GROUP BY channel_id) d2
+          ON d1.id = d2.mid
+      ) u ON c.id = u.channel_id
       WHERE c.is_selected = 1 AND (c.is_sold = 0 OR c.is_sold IS NULL)
       ORDER BY c.created_at DESC`
     );

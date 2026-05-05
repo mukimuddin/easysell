@@ -15,7 +15,7 @@ export async function POST(request) {
 
     const normalizedEmail = String(email).trim().toLowerCase();
     const [buyers] = await pool.query(
-      'SELECT id, password, status FROM buyer_accounts WHERE email = ? LIMIT 1',
+      'SELECT id, password, status, is_blocked FROM buyer_accounts WHERE email = ? LIMIT 1',
       [normalizedEmail]
     );
 
@@ -27,6 +27,10 @@ export async function POST(request) {
     const isValid = await bcrypt.compare(password, buyer.password);
     if (!isValid) {
       return NextResponse.json({ error: 'Invalid email or password.' }, { status: 401 });
+    }
+
+    if (buyer.is_blocked === 1) {
+      return NextResponse.json({ error: 'Your account has been blocked by an admin.' }, { status: 403 });
     }
 
     if (buyer.status !== 'approved') {

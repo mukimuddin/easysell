@@ -28,6 +28,8 @@ export async function GET() {
         b.phone,
         b.email,
         b.status,
+        b.is_blocked,
+        b.credentials_unlocked,
         b.created_at,
         b.reviewed_at,
         reviewer.username AS reviewed_by_name
@@ -115,17 +117,39 @@ export async function PATCH(request) {
 
   try {
     await ensureBuyerTable();
-    const { id, status } = await request.json();
-    if (!id || !['approved', 'rejected', 'pending'].includes(status)) {
+    const { id, status, is_blocked, credentials_unlocked } = await request.json();
+    if (!id) {
       return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
     }
 
-    await pool.execute(
-      `UPDATE buyer_accounts
-       SET status = ?, reviewed_by = ?, reviewed_at = NOW()
-       WHERE id = ?`,
-      [status, session.userId, id]
-    );
+    const updates = [];
+    const params = [];
+
+    if (status && ['approved', 'rejected', 'pending'].includes(status)) {
+      updates.push('status = ?');
+      params.push(status);
+    }
+    if (typeof is_blocked !== 'undefined') {
+      updates.push('is_blocked = ?');
+      params.push(is_blocked ? 1 : 0);
+    }
+    if (typeof credentials_unlocked !== 'undefined') {
+      updates.push('credentials_unlocked = ?');
+      params.push(credentials_unlocked ? 1 : 0);
+    }
+
+    if (updates.length > 0) {
+      updates.push('reviewed_by = ?');
+      params.push(session.userId);
+      updates.push('reviewed_at = NOW()');
+
+      params.push(id);
+
+      await pool.execute(
+        `UPDATE buyer_accounts SET ${updates.join(', ')} WHERE id = ?`,
+        params
+      );
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

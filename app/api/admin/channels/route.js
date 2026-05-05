@@ -23,9 +23,11 @@ export async function GET() {
       FROM channels c 
       LEFT JOIN workers w ON c.worker_id = w.id 
       LEFT JOIN admin_users adm ON c.created_by = adm.id
-      LEFT JOIN daily_updates u ON u.id = (
-          SELECT MAX(id) FROM daily_updates d2 WHERE d2.channel_id = c.id
-      )
+      LEFT JOIN (
+        SELECT d1.* FROM daily_updates d1
+        JOIN (SELECT channel_id, MAX(id) as mid FROM daily_updates GROUP BY channel_id) d2
+          ON d1.id = d2.mid
+      ) u ON c.id = u.channel_id
     `;
 
     const params = [];

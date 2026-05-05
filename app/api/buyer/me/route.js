@@ -15,7 +15,7 @@ export async function GET() {
   try {
     await ensureBuyerTable();
     const [rows] = await pool.query(
-      `SELECT id, full_name, company_name, email, phone, status
+      `SELECT id, full_name, company_name, email, phone, status, is_blocked, credentials_unlocked
        FROM buyer_accounts
        WHERE id = ?
        LIMIT 1`,
@@ -26,7 +26,13 @@ export async function GET() {
       return NextResponse.json({ error: 'Buyer not found' }, { status: 404 });
     }
 
-    return NextResponse.json(rows[0]);
+    const buyer = rows[0];
+
+    if (buyer.is_blocked === 1) {
+      return NextResponse.json({ error: 'Blocked by admin' }, { status: 403 });
+    }
+
+    return NextResponse.json(buyer);
   } catch (error) {
     console.error('Buyer profile error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

@@ -48,9 +48,11 @@ export async function GET() {
       SELECT w.id, w.name, SUM(u.sub_count) as total_subs, COUNT(c.id) as channel_count
       FROM workers w
       JOIN channels c ON w.id = c.worker_id
-      LEFT JOIN daily_updates u ON u.id = (
-          SELECT MAX(id) FROM daily_updates d2 WHERE d2.channel_id = c.id
-      )
+      LEFT JOIN (
+        SELECT d1.* FROM daily_updates d1
+        JOIN (SELECT channel_id, MAX(id) as mid FROM daily_updates GROUP BY channel_id) d2
+          ON d1.id = d2.mid
+      ) u ON c.id = u.channel_id
       WHERE c.is_sold = 0 ${ownerFilter}
       GROUP BY w.id
       ORDER BY total_subs DESC
@@ -62,9 +64,11 @@ export async function GET() {
       SELECT c.id, c.channel_name, c.channel_link, u.sub_count, u.status, w.name as worker_name
       FROM channels c
       LEFT JOIN workers w ON c.worker_id = w.id
-      LEFT JOIN daily_updates u ON u.id = (
-          SELECT MAX(id) FROM daily_updates d2 WHERE d2.channel_id = c.id
-      )
+      LEFT JOIN (
+        SELECT d1.* FROM daily_updates d1
+        JOIN (SELECT channel_id, MAX(id) as mid FROM daily_updates GROUP BY channel_id) d2
+          ON d1.id = d2.mid
+      ) u ON c.id = u.channel_id
       WHERE c.is_sold = 0 ${ownerFilter}
       ORDER BY u.sub_count DESC
       LIMIT 10
@@ -76,9 +80,11 @@ export async function GET() {
              DATEDIFF(CURRENT_DATE, c.open_date) as days_old
       FROM channels c
       LEFT JOIN workers w ON c.worker_id = w.id
-      LEFT JOIN daily_updates u ON u.id = (
-          SELECT MAX(id) FROM daily_updates d2 WHERE d2.channel_id = c.id
-      )
+      LEFT JOIN (
+        SELECT d1.* FROM daily_updates d1
+        JOIN (SELECT channel_id, MAX(id) as mid FROM daily_updates GROUP BY channel_id) d2
+          ON d1.id = d2.mid
+      ) u ON c.id = u.channel_id
       WHERE c.is_sold = 0 AND c.open_date IS NOT NULL ${ownerFilter}
       ORDER BY c.open_date ASC
       LIMIT 10
@@ -88,9 +94,11 @@ export async function GET() {
     const [statusDist] = await pool.query(`
       SELECT COALESCE(u.status, 'new') as status, COUNT(*) as count 
       FROM channels c
-      LEFT JOIN daily_updates u ON u.id = (
-          SELECT MAX(id) FROM daily_updates d2 WHERE d2.channel_id = c.id
-      )
+      LEFT JOIN (
+        SELECT d1.* FROM daily_updates d1
+        JOIN (SELECT channel_id, MAX(id) as mid FROM daily_updates GROUP BY channel_id) d2
+          ON d1.id = d2.mid
+      ) u ON c.id = u.channel_id
       WHERE c.is_sold = 0 ${ownerFilter}
       GROUP BY status
     `, ownerParams);

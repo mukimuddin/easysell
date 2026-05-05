@@ -229,24 +229,35 @@ function AdminContent() {
         fetch('/api/admin/workers'),
         fetch('/api/admin/sources')
       ]);
-      setChannels(await cRes.json());
-      setWorkers(await wRes.json());
-      const sData = await sRes.json();
-      setSources(Array.isArray(sData) ? sData : []);
-
-      if (profile.role === 'admin') {
-        const [uRes, eRes, bRes, jobRes] = await Promise.all([
-          fetch('/api/admin/users'),
-          fetch('/api/admin/employees'),
-          fetch('/api/admin/buyers'),
-          fetch('/api/admin/employee-applications'),
+        const [cData, wData, sData] = await Promise.all([
+          cRes.json(),
+          wRes.json(),
+          sRes.json()
         ]);
-        setAdmins(await uRes.json());
-        setEmployees(await eRes.json());
-        setBuyers(await bRes.json());
-        const jobData = await jobRes.json();
-        setEmployeeApplications(Array.isArray(jobData) ? jobData : []);
-      }
+        setChannels(Array.isArray(cData) ? cData : []);
+        setWorkers(Array.isArray(wData) ? wData : []);
+        setSources(Array.isArray(sData) ? sData : []);
+  
+        if (profile.role === 'admin') {
+          const [uRes, eRes, bRes, jobRes] = await Promise.all([
+            fetch('/api/admin/users'),
+            fetch('/api/admin/employees'),
+            fetch('/api/admin/buyers'),
+            fetch('/api/admin/employee-applications'),
+          ]);
+          
+          const [uData, eData, bData, jData] = await Promise.all([
+            uRes.json(),
+            eRes.json(),
+            bRes.json(),
+            jobRes.json()
+          ]);
+          
+          setAdmins(Array.isArray(uData) ? uData : []);
+          setEmployees(Array.isArray(eData) ? eData : []);
+          setBuyers(Array.isArray(bData) ? bData : []);
+          setEmployeeApplications(Array.isArray(jData) ? jData : []);
+        }
 
       // Fetch personal profile for everyone
       const mpRes = await fetch('/api/admin/employees?me=true');
@@ -450,6 +461,30 @@ function AdminContent() {
       });
       if (res.ok) {
         toast.success('Buyer status updated.');
+        loadData();
+      } else {
+        const data = await res.json();
+        toast.error(data.error || 'Failed to update buyer.');
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to update buyer.');
+    }
+  };
+
+  const handleBuyerToggle = async (buyerId, key, value, confirmMsg) => {
+    const approved = await showConfirm(confirmMsg);
+    if (!approved) return;
+    try {
+      const payload = { id: buyerId };
+      payload[key] = value;
+      const res = await fetch('/api/admin/buyers', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        toast.success('Buyer updated.');
         loadData();
       } else {
         const data = await res.json();
@@ -1717,8 +1752,26 @@ function AdminContent() {
                         </td>
                         <td style={{ textAlign: 'right' }}>
                           <div className="manage-actions">
-                            <button onClick={() => handleBuyerStatus(buyer.id, 'approved')} className="btn btn-sm btn-approve" title="Approve" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}><HiCheck /> Approve</button>
-                            <button onClick={() => handleBuyerStatus(buyer.id, 'rejected')} className="btn btn-sm btn-reject" title="Reject" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}><HiX /> Reject</button>
+                            {buyer.status !== 'approved' && (
+                              <button onClick={() => handleBuyerStatus(buyer.id, 'approved')} className="btn btn-sm btn-approve" title="Approve" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><HiCheck /></button>
+                            )}
+                            {buyer.status !== 'rejected' && (
+                              <button onClick={() => handleBuyerStatus(buyer.id, 'rejected')} className="btn btn-sm btn-reject" title="Reject" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><HiX /></button>
+                            )}
+                            {buyer.status === 'approved' && (
+                              <>
+                                {Number(buyer.is_blocked) ? (
+                                  <button type="button" onClick={() => handleBuyerToggle(buyer.id, 'is_blocked', false, 'Unblock this buyer?')} className="btn btn-sm btn-approve" title="Unblock" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><HiLockOpen /></button>
+                                ) : (
+                                  <button type="button" onClick={() => handleBuyerToggle(buyer.id, 'is_blocked', true, 'Block this buyer?')} className="btn btn-sm btn-outline" title="Block" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#991b1b', borderColor: '#fecaca' }}><HiLockClosed /></button>
+                                )}
+                                {Number(buyer.credentials_unlocked) ? (
+                                  <button type="button" onClick={() => handleBuyerToggle(buyer.id, 'credentials_unlocked', false, 'Lock credentials for this buyer?')} className="btn btn-sm btn-reject" title="Lock Credentials" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><HiEyeOff /></button>
+                                ) : (
+                                  <button type="button" onClick={() => handleBuyerToggle(buyer.id, 'credentials_unlocked', true, 'Unlock credentials for this buyer?')} className="btn btn-sm btn-approve" title="Unlock Credentials" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><HiEye /></button>
+                                )}
+                              </>
+                            )}
                           </div>
                         </td>
                       </tr>
