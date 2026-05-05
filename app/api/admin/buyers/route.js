@@ -117,9 +117,28 @@ export async function PATCH(request) {
 
   try {
     await ensureBuyerTable();
-    const { id, status, is_blocked, credentials_unlocked } = await request.json();
+    const body = await request.json();
+    const { id, status, is_blocked, credentials_unlocked, newPassword, generate } = body;
     if (!id) {
       return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
+    }
+
+    if (newPassword || generate) {
+      const plainPassword = generate
+        ? randomBytes(6).toString('base64url')
+        : String(newPassword || '').trim();
+
+      if (plainPassword.length < 6) {
+        return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 });
+      }
+
+      const hashedPassword = await bcrypt.hash(plainPassword, 10);
+      await pool.execute('UPDATE buyer_accounts SET password = ? WHERE id = ?', [hashedPassword, id]);
+
+      return NextResponse.json({
+        success: true,
+        generatedPassword: plainPassword,
+      });
     }
 
     const updates = [];

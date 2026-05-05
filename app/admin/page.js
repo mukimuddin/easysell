@@ -94,6 +94,11 @@ function AdminContent() {
   const [showEmployeePassword, setShowEmployeePassword] = useState(false);
   const [lastResetPassword, setLastResetPassword] = useState('');
 
+  const [passwordTargetBuyer, setPasswordTargetBuyer] = useState(null);
+  const [buyerPasswordInput, setBuyerPasswordInput] = useState('');
+  const [showBuyerPassword, setShowBuyerPassword] = useState(false);
+  const [lastResetBuyerPassword, setLastResetBuyerPassword] = useState('');
+
   // Bulk Sell State
   const [sellWorkerId, setSellWorkerId] = useState('');
   const [selectedIds, setSelectedIds] = useState([]);
@@ -431,6 +436,47 @@ function AdminContent() {
       const shownPassword = data.generatedPassword;
       if (shownPassword) {
         setLastResetPassword(shownPassword);
+        try {
+          await navigator.clipboard.writeText(shownPassword);
+          toast.success(`Password reset. New password copied: ${shownPassword}`);
+        } catch {
+          toast.success(`Password reset. New password: ${shownPassword}`);
+        }
+      } else {
+        toast.success('Password reset successfully.');
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Error resetting password');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleBuyerPasswordReset = async () => {
+    if (!passwordTargetBuyer) return;
+    setSubmitting(true);
+    try {
+      const useGenerated = buyerPasswordInput.trim() === '';
+      const res = await fetch('/api/admin/buyers', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: passwordTargetBuyer.id,
+          newPassword: useGenerated ? undefined : buyerPasswordInput.trim(),
+          generate: useGenerated,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || 'Failed to reset password');
+        return;
+      }
+
+      const shownPassword = data.generatedPassword;
+      if (shownPassword) {
+        setLastResetBuyerPassword(shownPassword);
         try {
           await navigator.clipboard.writeText(shownPassword);
           toast.success(`Password reset. New password copied: ${shownPassword}`);
@@ -1788,6 +1834,19 @@ function AdminContent() {
                                 ) : (
                                   <button type="button" onClick={() => handleBuyerToggle(buyer.id, 'credentials_unlocked', true, 'Unlock credentials for this buyer?')} className="btn btn-sm btn-approve" title="Unlock Credentials" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><HiEye /></button>
                                 )}
+                                <button
+                                  onClick={() => {
+                                    setPasswordTargetBuyer(buyer);
+                                    setBuyerPasswordInput('');
+                                    setShowBuyerPassword(false);
+                                    setLastResetBuyerPassword('');
+                                  }}
+                                  className="btn btn-sm btn-outline"
+                                  title="Reset Password"
+                                  style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                                >
+                                  <HiKey />
+                                </button>
                               </>
                             )}
                           </div>
@@ -2165,6 +2224,71 @@ function AdminContent() {
               <button
                 type="button"
                 onClick={handleEmployeePasswordReset}
+                disabled={submitting}
+                className="btn btn-sm btn-approve"
+                style={{ flex: 1 }}
+              >
+                {submitting ? '...' : 'Reset'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {passwordTargetBuyer && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div style={{ marginBottom: '1rem', fontWeight: 700 }}>
+              Reset Buyer Password: {passwordTargetBuyer.full_name}
+            </div>
+
+            <div className="compact-form-group">
+              <label>New Password (optional)</label>
+              <div style={{ display: 'flex', gap: '0.4rem' }}>
+                <input
+                  type={showBuyerPassword ? 'text' : 'password'}
+                  className="compact-form-control"
+                  value={buyerPasswordInput}
+                  onChange={(e) => setBuyerPasswordInput(e.target.value)}
+                  placeholder="Leave empty to auto-generate"
+                />
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline"
+                  onClick={() => setShowBuyerPassword((prev) => !prev)}
+                  title={showBuyerPassword ? 'Hide' : 'Show'}
+                >
+                  {showBuyerPassword ? <HiEyeOff /> : <HiEye />}
+                </button>
+              </div>
+              <div style={{ fontSize: '11px', color: '#64748b', marginTop: '0.4rem' }}>
+                Empty রাখলে auto-generated temporary password set হবে।
+              </div>
+            </div>
+
+            {lastResetBuyerPassword && (
+              <div style={{ border: '1px solid #e2e8f0', borderRadius: '6px', padding: '0.6rem', marginBottom: '0.8rem' }}>
+                <div style={{ fontSize: '10px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Latest Password</div>
+                <div style={{ marginTop: '0.25rem', fontWeight: 700 }}>{lastResetBuyerPassword}</div>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: '0.4rem', marginTop: '1.2rem' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setPasswordTargetBuyer(null);
+                  setBuyerPasswordInput('');
+                  setLastResetBuyerPassword('');
+                }}
+                className="btn btn-sm btn-outline"
+                style={{ flex: 1 }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleBuyerPasswordReset}
                 disabled={submitting}
                 className="btn btn-sm btn-approve"
                 style={{ flex: 1 }}
