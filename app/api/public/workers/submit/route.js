@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import pool from '@/lib/db';
-import { ensureAdminBlockedColumn } from '@/lib/adminBlocked';
+
 import { normalizeWhatsappForLookup } from '@/lib/whatsappNormalize';
 import { findWorkerByWhatsappInput } from '@/lib/workerLookup';
 import { emitEvent } from '@/lib/socket';
@@ -56,7 +56,7 @@ export async function POST(request) {
 
     assertBatchChannelUniqueness(channels);
 
-    await ensureAdminBlockedColumn();
+
 
     const [dealers] = await conn.query(
       `SELECT u.id FROM admin_users u WHERE u.id = ? AND u.role = 'employee' AND COALESCE(u.is_blocked,0) = 0 LIMIT 1`,

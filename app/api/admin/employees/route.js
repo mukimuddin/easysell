@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { verifySession } from '@/lib/session';
 import { cookies } from 'next/headers';
-import { ensureAdminBlockedColumn } from '@/lib/adminBlocked';
+
 import {
   findEmailConflictAcrossPortal,
   findPhoneConflictAcrossPortal,
@@ -21,7 +21,7 @@ export async function GET(request) {
   const isMe = searchParams.get('me') === 'true';
 
   try {
-    await ensureAdminBlockedColumn();
+
     if (isMe) {
       const [rows] = await pool.query(`
         SELECT u.id as admin_id, u.username, u.role, COALESCE(u.is_blocked, 0) as is_blocked,

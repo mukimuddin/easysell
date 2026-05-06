@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import pool from '@/lib/db';
-import { ensureAdminBlockedColumn } from '@/lib/adminBlocked';
+
 
 export async function GET() {
   try {
-    await ensureAdminBlockedColumn();
+
     const [rows] = await pool.query(`
       SELECT u.id AS admin_id, u.username,
              COALESCE(NULLIF(TRIM(ed.full_name), ''), u.username) AS display_name

@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server';
 import { createSession } from '@/lib/session';
 import pool from '@/lib/db';
 import bcrypt from 'bcryptjs';
-import { ensureAdminBlockedColumn, isAdminUserBlocked } from '@/lib/adminBlocked';
-import { ensureAdminAuthVersionColumn, getAdminAuthVersion } from '@/lib/adminAuthVersion';
+import { isAdminUserBlocked } from '@/lib/adminBlocked';
+import { getAdminAuthVersion } from '@/lib/adminAuthVersion';
 
 export async function POST(request) {
   const ip = request.headers.get('x-forwarded-for') || '127.0.0.1';
@@ -61,7 +61,7 @@ export async function POST(request) {
     const isValid = storedHash.length > 0 && (await bcrypt.compare(String(password), storedHash));
 
     if (isValid) {
-      await ensureAdminBlockedColumn();
+
       if (await isAdminUserBlocked(user.id)) {
         if (attempts.length > 0) {
           await pool.execute('UPDATE login_attempts SET attempts = attempts + 1 WHERE ip = ?', [ip]);
@@ -100,7 +100,7 @@ export async function POST(request) {
       // Success! Clear attempts
       await pool.execute('DELETE FROM login_attempts WHERE ip = ?', [ip]);
 
-      await ensureAdminAuthVersionColumn();
+
       const authVersion = await getAdminAuthVersion(user.id);
 
       const { session, expiresAt } = await createSession(user.id, user.role, authVersion);

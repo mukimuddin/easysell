@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { verifySession } from '@/lib/session';
 import { cookies } from 'next/headers';
-import { ensureAdminBlockedColumn, isAdminUserBlocked } from '@/lib/adminBlocked';
-import { ensureAdminAuthVersionColumn, getAdminAuthVersion } from '@/lib/adminAuthVersion';
+import { isAdminUserBlocked } from '@/lib/adminBlocked';
+import { getAdminAuthVersion } from '@/lib/adminAuthVersion';
 
 export async function GET() {
   const token = (await cookies()).get('adminToken')?.value;
@@ -13,7 +13,7 @@ export async function GET() {
   }
 
   try {
-    await ensureAdminBlockedColumn();
+
     if (await isAdminUserBlocked(session.userId)) {
       const res = NextResponse.json({ error: 'Account blocked', blocked: true }, { status: 403 });
       res.cookies.set('adminToken', '', {
@@ -26,7 +26,7 @@ export async function GET() {
       return res;
     }
 
-    await ensureAdminAuthVersionColumn();
+
     const dbAuthVer = await getAdminAuthVersion(session.userId);
     const tokenAuthVer = Number(session.authVersion ?? 0);
     if (tokenAuthVer !== dbAuthVer) {

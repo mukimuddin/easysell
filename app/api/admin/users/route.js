@@ -5,7 +5,7 @@ import { cookies } from 'next/headers';
 import bcrypt from 'bcryptjs';
 import { randomBytes } from 'node:crypto';
 import { emitEvent } from '@/lib/socket';
-import { ensureAdminBlockedColumn } from '@/lib/adminBlocked';
+
 import { bumpAdminAuthVersion } from '@/lib/adminAuthVersion';
 
 export async function GET() {
@@ -113,7 +113,7 @@ export async function PATCH(request) {
     }
 
     if (typeof is_blocked === 'boolean') {
-      await ensureAdminBlockedColumn();
+
       if (targetId === session.userId) {
         return NextResponse.json({ error: 'You cannot block your own account' }, { status: 400 });
       }

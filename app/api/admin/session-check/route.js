@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { verifySession } from '@/lib/session';
 import { cookies } from 'next/headers';
-import { ensureAdminBlockedColumn, isAdminUserBlocked } from '@/lib/adminBlocked';
-import { ensureAdminAuthVersionColumn, getAdminAuthVersion } from '@/lib/adminAuthVersion';
+import { isAdminUserBlocked } from '@/lib/adminBlocked';
+import { getAdminAuthVersion } from '@/lib/adminAuthVersion';
 
 /**
  * Lightweight auth + block check for middleware and clients.
