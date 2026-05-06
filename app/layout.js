@@ -5,6 +5,9 @@ import ConditionalLayout from '@/components/ConditionalLayout'
 export const metadata = {
   title: 'YTM Bangladesh - YouTube Channel Supply Network',
   description: 'YTM Bangladesh helps high-volume buyers source YouTube channels for scalable marketing growth.',
+  icons: {
+    icon: '/icons8-youtube-50.png',
+  },
 }
 
 import { UIProvider } from '@/components/UIContext'

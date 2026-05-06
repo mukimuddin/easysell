@@ -5,7 +5,10 @@ export default function Footer() {
     <footer className="footer">
       <div className="footer-container">
         <div className="footer-brand">
-          <Link href="/" className="logo">YTM.</Link>
+          <Link href="/" className="logo" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <img src="/icons8-youtube-50.png" alt="Logo" style={{ height: '26px', width: 'auto' }} />
+            <span className="logo-text">YTM.</span>
+          </Link>
           <p>
             Professional ecosystem for channel sourcing, buyer onboarding, and secure operational delivery.
             Built for scalable and policy-aligned growth.

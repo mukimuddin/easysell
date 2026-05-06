@@ -38,7 +38,11 @@ export default function BuyerLoginPage() {
   return (
     <main style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '1rem', background: '#ffffff' }}>
       <div style={{ width: '100%', maxWidth: '340px', padding: '1.5rem', border: '1px solid #e2e8f0', borderRadius: '4px' }}>
-        <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1e293b', marginBottom: '1.5rem', textAlign: 'center' }}>Buyer Login</h2>
+        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+          <img src="/icons8-youtube-50.png" alt="Logo" style={{ height: '42px', width: 'auto', marginBottom: '0.4rem' }} />
+          <div className="logo-text">YTM Bangladesh</div>
+          <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', marginTop: '0.2rem' }}>Buyer Login</div>
+        </div>
         {error ? <div style={{ color: '#dc2626', background: '#fee2e2', padding: '0.5rem', borderRadius: '4px', fontSize: '12px', marginBottom: '1rem', textAlign: 'center', fontWeight: 600 }}>{error}</div> : null}
 
         <form onSubmit={onSubmit}>
