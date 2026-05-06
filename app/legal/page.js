@@ -1,5 +1,11 @@
 import Link from 'next/link';
 
+export const metadata = {
+  title: 'Legal Overview - YTM Bangladesh',
+  description: 'Access the full set of legal documents and policies for YTM Bangladesh, including Terms of Service, Privacy Policy, and Refund Policy.',
+  keywords: 'YTM Bangladesh legal, YouTube marketplace policies, contractual terms',
+}
+
 export default function LegalPage() {
   return (
     <main className="common-container info-page">

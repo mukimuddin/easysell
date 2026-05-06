@@ -1,3 +1,9 @@
+export const metadata = {
+  title: 'Privacy Policy - YTM Bangladesh',
+  description: 'Learn how YTM Bangladesh collects, processes, and protects your personal data. Our privacy policy explains your rights and our data security measures.',
+  keywords: 'YTM Bangladesh privacy, data protection policy, YouTube marketplace privacy',
+}
+
 export default function PrivacyPolicyPage() {
   return (
     <main className="common-container info-page">

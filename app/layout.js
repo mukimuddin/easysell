@@ -38,8 +38,32 @@ export const metadata = {
 import { UIProvider } from '@/components/UIContext'
 
 export default function RootLayout({ children }) {
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'YTM Bangladesh',
+    url: 'https://ytmbd.work',
+    logo: 'https://ytmbd.work/icons8-youtube-50.png',
+    contactPoint: {
+      '@type': 'ContactPoint',
+      telephone: '+8801601315176',
+      contactType: 'customer service',
+      areaServed: 'BD',
+      availableLanguage: ['Bengali', 'English'],
+    },
+    sameAs: [
+      'https://wa.me/8801601315176',
+    ],
+  };
+
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </head>
       <body>
         <UIProvider>
           <Suspense fallback={<div style={{ padding: '2rem' }}>Prerendering App...</div>}>

@@ -1,3 +1,9 @@
+export const metadata = {
+  title: 'Refund Policy - YTM Bangladesh',
+  description: 'Understand the refund eligibility and process at YTM Bangladesh. Learn about required evidence, timelines, and resolution pathways.',
+  keywords: 'YTM Bangladesh refund, YouTube marketplace refund policy, transaction dispute resolution',
+}
+
 export default function RefundPolicyPage() {
   return (
     <main className="common-container info-page">

@@ -1,5 +1,11 @@
 import Link from 'next/link';
 
+export const metadata = {
+  title: 'YTM Bangladesh - YouTube Channel Supply & Sourcing Network',
+  description: 'YTM Bangladesh is the leading professional marketplace for buying and sourcing YouTube channels in Bangladesh. High-volume supply, verified inventory, secure delivery.',
+  keywords: 'buy YouTube channels Bangladesh, YTM Bangladesh, YouTube channel marketplace, monetized YouTube channels, channel sourcing network, buy YouTube accounts',
+}
+
 export default function Home() {
   const heroKpis = [
     { label: 'Live Buyers', value: '14,800+' },

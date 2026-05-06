@@ -1,5 +1,11 @@
 import Link from 'next/link';
 
+export const metadata = {
+  title: 'Contact Us - YTM Bangladesh',
+  description: 'Get in touch with YTM Bangladesh for buyer onboarding, channel sourcing inquiries, or support. Reach us via email, WhatsApp, or call.',
+  keywords: 'contact YTM Bangladesh, YouTube marketplace support, channel sourcing inquiry, YTM Bangladesh WhatsApp',
+}
+
 export default function ContactUsPage() {
   return (
     <main className="common-container info-page">

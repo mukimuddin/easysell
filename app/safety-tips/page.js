@@ -1,5 +1,11 @@
 import Link from 'next/link';
 
+export const metadata = {
+  title: 'Safety Tips & Fraud Prevention - YTM Bangladesh',
+  description: 'Learn how to stay safe while buying and selling YouTube channels. Follow our safety checklist to prevent fraud and protect your credentials.',
+  keywords: 'YouTube safety tips, fraud prevention YouTube, YTM Bangladesh security, secure channel handover',
+}
+
 export default function SafetyTipsPage() {
   return (
     <main className="common-container info-page">

@@ -1,3 +1,9 @@
+export const metadata = {
+  title: 'Terms of Service - YTM Bangladesh',
+  description: 'Read the Terms of Service for YTM Bangladesh. Learn about account responsibility, service scope, and marketplace conduct rules.',
+  keywords: 'YTM Bangladesh terms, service conditions, YouTube marketplace rules',
+}
+
 export default function TermsOfServicePage() {
   return (
     <main className="common-container info-page">
