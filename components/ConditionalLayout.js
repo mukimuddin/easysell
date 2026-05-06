@@ -104,9 +104,7 @@ export default function ConditionalLayout({ children }) {
            <button className="menu-toggle" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
              {isSidebarOpen ? '✕' : '☰'}
            </button>
-           <div className="mobile-logo" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-             <img src="/icons8-youtube-50.png" alt="Logo" style={{ height: '24px', width: 'auto' }} />
-           </div>
+           <div className="mobile-logo">Growth Tracker</div>
            <div style={{ width: '38px' }}></div>
         </header>
 
@@ -115,8 +113,8 @@ export default function ConditionalLayout({ children }) {
         )}
 
         <aside className={`admin-sidebar ${isSidebarOpen ? 'open' : ''}`}>
-          <div className="sidebar-logo" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60px' }}>
-            <img src="/icons8-youtube-50.png" alt="Logo" style={{ height: '36px', width: 'auto' }} />
+          <div className="sidebar-logo">
+            Growth Tracker
           </div>
           
           <nav className="sidebar-nav">
@@ -215,9 +213,9 @@ export default function ConditionalLayout({ children }) {
       {showPublicNavbar && (
         <nav className="navbar">
           <div className="nav-container">
-            <Link href="/" className="logo">
-              <img src="/icons8-youtube-50.png" alt="Logo" style={{ height: '28px', width: 'auto' }} />
-              <span className="logo-text">YTM Bangladesh</span>
+            <Link href="/" className="logo" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <img src="/icons8-youtube-50.png" alt="Logo" style={{ height: '24px', width: 'auto', flexShrink: 0 }} />
+              <span className="logo-text" style={{ margin: 0 }}>YTM Bangladesh</span>
             </Link>
             <div className="nav-links">
               <Link href="/jobs" className="nav-link">Jobs</Link>

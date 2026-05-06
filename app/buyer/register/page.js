@@ -56,10 +56,10 @@ export default function BuyerRegisterPage() {
       }}
     >
       <div style={{ width: '100%', maxWidth: '420px', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '1rem' }}>
-        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '1.5rem' }}>
           <img src="/icons8-youtube-50.png" alt="Logo" style={{ height: '42px', width: 'auto', marginBottom: '0.4rem' }} />
-          <div className="logo-text">YTM Bangladesh</div>
-          <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', marginTop: '0.2rem' }}>Buyer Registration</div>
+          <div className="logo-text" style={{ lineHeight: 1 }}>YTM Bangladesh</div>
+          <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', marginTop: '0.4rem' }}>Buyer Registration</div>
         </div>
 
         {error ? <div style={{ marginBottom: '0.75rem', color: '#b91c1c', fontSize: '12px' }}>{error}</div> : null}
