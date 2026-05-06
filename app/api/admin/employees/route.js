@@ -140,7 +140,7 @@ export async function POST(request) {
     `;
 
     const [result] = await pool.execute(query, [admin_id, ...values]);
-    console.log(`[DB] Employee details updated for admin_id ${admin_id}. Affected rows: ${result.affectedRows}`);
+
 
     return NextResponse.json({ success: true, affectedRows: result.affectedRows });
   } catch (error) {

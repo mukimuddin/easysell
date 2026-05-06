@@ -359,7 +359,6 @@ function AdminContent() {
     const socket = getSocket();
     if (socket) {
       const handleUpdate = () => {
-        console.log('Real-time update received');
         loadData();
       };
       const handleSessionInvalidate = (data) => {
@@ -966,7 +965,6 @@ function AdminContent() {
     const data = Object.fromEntries(formData.entries());
     data.admin_id = editEmployee.admin_id;
 
-    console.log("[DEBUG] Updating Employee Profile:", data);
 
     try {
       const res = await fetch('/api/admin/employees', {

@@ -17,7 +17,6 @@ export async function GET() {
   }
 
   try {
-    await ensureAdminBlockedColumn();
     const blocked = await isAdminUserBlocked(session.userId);
     if (blocked) {
       const res = NextResponse.json({ error: 'Account blocked', blocked: true }, { status: 403 });
@@ -31,7 +30,6 @@ export async function GET() {
       return res;
     }
 
-    await ensureAdminAuthVersionColumn();
     const dbAuthVer = await getAdminAuthVersion(session.userId);
     const tokenAuthVer = Number(session.authVersion ?? 0);
     if (tokenAuthVer !== dbAuthVer) {
