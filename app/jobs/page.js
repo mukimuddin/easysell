@@ -1,5 +1,11 @@
 import Link from 'next/link';
 
+export const metadata = {
+  title: 'Careers at YTM Bangladesh - Channel Sourcing Executive',
+  description: 'Join YTM Bangladesh as a Channel Sourcing Executive. We are looking for talented individuals to join our hybrid workforce in Dhaka. Apply now for contract-based positions.',
+  keywords: 'YTM Bangladesh jobs, channel sourcing executive, YouTube jobs Dhaka, hybrid jobs Bangladesh, field executive jobs',
+}
+
 export default function JobsPage() {
   const commonResponsibilities = [
     'ইউটিউব চ্যানেল খোলার জন্য আগ্রহ সৃষ্টি করা এবং প্রার্থীদের অনবোর্ড করা',

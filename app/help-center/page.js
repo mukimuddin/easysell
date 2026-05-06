@@ -1,5 +1,11 @@
 import Link from 'next/link';
 
+export const metadata = {
+  title: 'Help Center - YTM Bangladesh Support & FAQ',
+  description: 'Find answers to common questions about YTM Bangladesh. Learn about account approval, channel status, communication policy, and payment flows.',
+  keywords: 'YTM Bangladesh help, YouTube marketplace FAQ, buyer support, channel handover help, YouTube business guide',
+}
+
 export default function HelpCenterPage() {
   return (
     <main className="common-container info-page">

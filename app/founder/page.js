@@ -1,5 +1,11 @@
 import Image from 'next/image';
 
+export const metadata = {
+  title: 'Mukim Uddin - Founder & Strategic Lead, YTM Bangladesh',
+  description: 'Learn about Mukim Uddin, the visionary behind YTM Bangladesh. Discover his journey in building a professional YouTube channel supply network from Dhaka.',
+  keywords: 'Mukim Uddin, YTM Bangladesh founder, YouTube entrepreneur Bangladesh, channel sourcing expert, digital marketing leader Dhaka',
+}
+
 const milestones = [
   { year: '2017', title: 'Market Entry', desc: 'Started as a solo channel sourcing consultant in Dhaka with a micro client base.' },
   { year: '2019', title: 'Team Build', desc: 'Built first structured field team and launched repeatable onboarding playbook.' },
