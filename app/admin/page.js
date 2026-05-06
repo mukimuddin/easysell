@@ -1448,8 +1448,21 @@ function AdminContent() {
                               <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#10b981' }}>৳{parseFloat(empDetail?.metrics?.total_profit || 0).toLocaleString()}</div>
                            </div>
                            <div style={{ background: '#fff', padding: '0.75rem 0.8rem' }}>
+                              <div style={{ fontSize: '8px', textTransform: 'uppercase', fontWeight: 800, color: '#94a3b8', letterSpacing: '0.05em' }}>Commission</div>
+                              <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#f59e0b' }}>৳{parseFloat(empDetail?.metrics?.total_commission || 0).toLocaleString()}</div>
+                           </div>
+                           <div style={{ background: '#fff', padding: '0.75rem 0.8rem' }}>
+                              <div style={{ fontSize: '8px', textTransform: 'uppercase', fontWeight: 800, color: '#6366f1', letterSpacing: '0.05em' }}>Your Profit</div>
+                              <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#0f172a' }}>
+                                 ৳{(
+                                   (parseFloat(empDetail?.metrics?.total_profit) || 0) - 
+                                   (parseFloat(empDetail?.metrics?.total_commission) || 0)
+                                 ).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                              </div>
+                           </div>
+                           <div style={{ background: '#fff', padding: '0.75rem 0.8rem' }}>
                               <div style={{ fontSize: '8px', textTransform: 'uppercase', fontWeight: 800, color: '#94a3b8', letterSpacing: '0.05em' }}>Consistency</div>
-                              <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#0f172a' }}>{(( (empDetail?.consistency || 0) / 30) * 100).toFixed(0)}%</div>
+                              <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#0f172a' }}>{(( (empDetail?.consistency || 0) / analyticsRange) * 100).toFixed(0)}%</div>
                            </div>
                            <div style={{ background: '#fff', padding: '0.75rem 0.8rem' }}>
                               <div style={{ fontSize: '8px', textTransform: 'uppercase', fontWeight: 800, color: '#94a3b8', letterSpacing: '0.05em' }}>Best Day</div>

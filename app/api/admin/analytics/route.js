@@ -59,17 +59,21 @@ export async function GET(request) {
         ORDER BY d.log_date ASC
       `, [emp.id, emp.id, interval]);
 
-      // Velocity & Profit
+      // Velocity, Revenue & Profit
       const [metrics] = await pool.query(`
         SELECT 
-          AVG(DATEDIFF(sold_at, created_at)) as avg_velocity,
-          SUM(sell_price - worker_cost) as total_profit,
+          AVG(DATEDIFF(c.sold_at, c.created_at)) as avg_velocity,
+          SUM(c.sell_price) as total_revenue,
+          SUM(c.sell_price - c.worker_cost) as total_profit,
+          SUM(CASE WHEN c.is_sold = 1 THEN 1 ELSE 0 END) as sold_count,
+          SUM(CASE WHEN c.is_sold = 1 THEN (ed.basic_salary / ed.contract_target) ELSE 0 END) as total_commission,
           MAX(daily_counts.added_count) as best_day_count
         FROM channels c
+        JOIN employee_details ed ON c.created_by = ed.admin_id
         LEFT JOIN (
           SELECT DATE(created_at) as d, COUNT(*) as added_count FROM channels WHERE created_by = ? GROUP BY d
         ) daily_counts ON DATE(c.created_at) = daily_counts.d
-        WHERE created_by = ?
+        WHERE c.created_by = ?
       `, [emp.id, emp.id]);
 
       // Consistency (Updates in dynamic range)
