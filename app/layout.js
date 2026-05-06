@@ -3,6 +3,7 @@ import './globals.css'
 import ConditionalLayout from '@/components/ConditionalLayout'
 
 export const metadata = {
+  metadataBase: new URL('https://ytmbd.work'),
   title: 'YTM Bangladesh - Professional YouTube Channel Supply Network',
   description: 'YTM Bangladesh is the leading managed marketplace for high-volume YouTube channel sourcing, screening, and secure delivery. Optimized for agencies and strategic media operators.',
   keywords: 'YouTube channel marketplace, buy YouTube channels, YouTube sourcing Bangladesh, YTM Bangladesh, buy monetized channels, YouTube supply network, YouTube business, YTM',
