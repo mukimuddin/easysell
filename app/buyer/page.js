@@ -40,6 +40,7 @@ function CopyButton({ text, title, successMsg }) {
 }
 
 export default function BuyerPanelPage() {
+  const { toast } = useUI();
   const [profile, setProfile] = useState(null);
   const [channels, setChannels] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -49,6 +50,8 @@ export default function BuyerPanelPage() {
   const [sortBy, setSortBy] = useState('subs_desc');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [includeCredentials, setIncludeCredentials] = useState(false);
 
   const loadData = async (isManualRefresh = false) => {
     try {
@@ -133,6 +136,49 @@ export default function BuyerPanelPage() {
     if (page > totalPages) setPage(totalPages);
   }, [page, totalPages]);
 
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    const allOnPageSelected = paginatedChannels.length > 0 && paginatedChannels.every(c => selectedIds.has(c.id));
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allOnPageSelected) {
+        paginatedChannels.forEach(c => next.delete(c.id));
+      } else {
+        paginatedChannels.forEach(c => next.add(c.id));
+      }
+      return next;
+    });
+  };
+
+  const handleBulkCopy = () => {
+    const selectedChannels = channels.filter((c) => selectedIds.has(c.id));
+    if (selectedChannels.length === 0) {
+      toast.error('Please select at least one channel!');
+      return;
+    }
+
+    const text = selectedChannels
+      .map((c) => {
+        let entry = `REG: ${c.reg_no || 'N/A'}\nNAME: ${c.channel_name || 'N/A'}\nLINK: ${c.channel_link || 'N/A'}`;
+        if (includeCredentials && profile?.credentials_unlocked === 1) {
+          entry += `\nGMAIL: ${c.gmail || 'N/A'}\nPASS: ${c.password || 'N/A'}`;
+        }
+        return entry;
+      })
+      .join('\n\n---\n\n');
+
+    navigator.clipboard.writeText(text);
+    toast.success(`${selectedChannels.length} channels copied!`);
+  };
+
   if (loading) {
     return <main style={{ maxWidth: '980px', margin: '0 auto', padding: '1rem' }}>Loading buyer panel...</main>;
   }
@@ -175,6 +221,29 @@ export default function BuyerPanelPage() {
               Logout
             </button>
           </div>
+        </div>
+
+        {/* Multi-Copy Feature */}
+        <div style={{ marginTop: '0.8rem', display: 'flex', gap: '0.5rem', alignItems: 'center', background: '#f1f5f9', padding: '0.5rem', borderRadius: '8px', flexWrap: 'wrap' }}>
+          <button
+            className={`btn btn-sm ${selectedIds.size > 0 ? 'btn-primary' : 'btn-outline'}`}
+            onClick={handleBulkCopy}
+            disabled={selectedIds.size === 0}
+            style={{ fontSize: '11px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+          >
+            <HiOutlineClipboardCopy />
+            Copy Selected ({selectedIds.size})
+          </button>
+          
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '11px', cursor: 'pointer', userSelect: 'none', marginLeft: 'auto' }}>
+            <input
+              type="checkbox"
+              checked={includeCredentials}
+              onChange={(e) => setIncludeCredentials(e.target.checked)}
+              disabled={profile?.credentials_unlocked !== 1}
+            />
+            Include Credentials
+          </label>
         </div>
 
         <div className="buyer-kpi-grid" style={{ marginTop: '0.65rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.45rem' }}>
@@ -258,6 +327,13 @@ export default function BuyerPanelPage() {
           <table className="compact-table">
             <thead>
               <tr>
+                <th style={{ width: '30px', textAlign: 'center' }}>
+                  <input
+                    type="checkbox"
+                    checked={paginatedChannels.length > 0 && paginatedChannels.every(c => selectedIds.has(c.id))}
+                    onChange={toggleSelectAll}
+                  />
+                </th>
                 <th>Reg.</th>
                 <th>Channel</th>
                 <th>Specialist</th>
@@ -269,7 +345,14 @@ export default function BuyerPanelPage() {
             </thead>
             <tbody>
               {paginatedChannels.map((channel, idx) => (
-                <tr key={channel.id}>
+                <tr key={channel.id} style={{ background: selectedIds.has(channel.id) ? '#f8faff' : 'inherit' }}>
+                  <td style={{ textAlign: 'center' }}>
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(channel.id)}
+                      onChange={() => toggleSelect(channel.id)}
+                    />
+                  </td>
                   <td>
                     <span style={{ 
                       background: '#f1f5f9', 
@@ -345,9 +428,14 @@ export default function BuyerPanelPage() {
         <div className="buyer-card-mobile" style={{ display: 'none', padding: '0.55rem', background: '#fff' }}>
           {paginatedChannels.length > 0 ? (
             paginatedChannels.map((channel, idx) => (
-              <div key={channel.id} style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0.5rem', marginBottom: '0.45rem' }}>
+              <div key={channel.id} style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0.5rem', marginBottom: '0.45rem', background: selectedIds.has(channel.id) ? '#f8faff' : 'inherit' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.35rem', marginBottom: '0.25rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(channel.id)}
+                      onChange={() => toggleSelect(channel.id)}
+                    />
                     <span style={{ 
                       background: '#f8fafc', 
                       color: '#64748b', 

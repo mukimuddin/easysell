@@ -109,9 +109,53 @@ function AdminContent() {
   const [sellWorkerId, setSellWorkerId] = useState('');
   const [selectedIds, setSelectedIds] = useState([]);
   const [expandedIds, setExpandedIds] = useState([]);
+  const [includeCredentials, setIncludeCredentials] = useState(false);
 
   const toggleDrawer = (id) => {
     setExpandedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  };
+
+  const handleBulkCopy = () => {
+    const selectedChannels = channels.filter((c) => selectedIds.includes(c.id));
+    if (selectedChannels.length === 0) {
+      toast.error('Please select at least one channel!');
+      return;
+    }
+
+    const text = selectedChannels
+      .map((c) => {
+        let entry = `REG: ${c.reg_no || 'N/A'}\nNAME: ${c.channel_name || 'N/A'}\nLINK: ${c.channel_link || 'N/A'}`;
+        if (includeCredentials) {
+          entry += `\nGMAIL: ${c.gmail || 'N/A'}\nPASS: ${c.password || 'N/A'}`;
+        }
+        return entry;
+      })
+      .join('\n\n---\n\n');
+
+    navigator.clipboard.writeText(text);
+    toast.success(`${selectedChannels.length} channels copied!`);
+  };
+
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) => {
+      if (prev.includes(id)) return prev.filter(i => i !== id);
+      return [...prev, id];
+    });
+  };
+
+  const toggleSelectAllChannels = (scopedChannels) => {
+    const allOnPageSelected = scopedChannels.length > 0 && scopedChannels.every(c => selectedIds.includes(c.id));
+    if (allOnPageSelected) {
+      setSelectedIds(prev => prev.filter(id => !scopedChannels.some(c => c.id === id)));
+    } else {
+      setSelectedIds(prev => {
+        const next = [...prev];
+        scopedChannels.forEach(c => {
+          if (!next.includes(c.id)) next.push(c.id);
+        });
+        return next;
+      });
+    }
   };
 
   // 🔍 Filter State
@@ -1767,6 +1811,29 @@ function AdminContent() {
         </div>
       )}
 
+      {['monitoring', 'channels'].includes(activeTab) && !editEmployee && (
+        <div style={{ marginTop: '0.4rem', marginBottom: '0.75rem', display: 'flex', gap: '0.5rem', alignItems: 'center', background: '#f1f5f9', padding: '0.5rem', borderRadius: '6px', border: '1px solid #e2e8f0', flexWrap: 'wrap' }}>
+          <button
+            className={`btn btn-sm ${selectedIds.length > 0 ? 'btn-primary' : 'btn-outline'}`}
+            onClick={handleBulkCopy}
+            disabled={selectedIds.length === 0}
+            style={{ fontSize: '11px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+          >
+            <HiOutlineClipboardCopy />
+            Copy Selected ({selectedIds.length})
+          </button>
+          
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '11px', cursor: 'pointer', userSelect: 'none', marginLeft: 'auto' }}>
+            <input
+              type="checkbox"
+              checked={includeCredentials}
+              onChange={(e) => setIncludeCredentials(e.target.checked)}
+            />
+            Include Credentials
+          </label>
+        </div>
+      )}
+
       {activeTab === 'sources' && (
         <div style={{ 
           display: 'flex', gap: '0.4rem', marginBottom: '0.75rem', 
@@ -1882,6 +1949,13 @@ function AdminContent() {
                 <>
                   <thead>
                     <tr>
+                      <th style={{ width: '30px', textAlign: 'center' }}>
+                        <input
+                          type="checkbox"
+                          checked={activeChannels.length > 0 && activeChannels.every(c => selectedIds.includes(c.id))}
+                          onChange={() => toggleSelectAllChannels(activeChannels)}
+                        />
+                      </th>
                       <th>Reg.</th>
                       <th>Channel</th>
                       <th>Specialist</th>
@@ -1895,7 +1969,14 @@ function AdminContent() {
                   <tbody>
                     {activeChannels.map((c, idx) => (
                       <Fragment key={c.id}>
-                        <tr key={c.id}>
+                        <tr key={c.id} style={{ background: selectedIds.includes(c.id) ? '#f8faff' : 'inherit' }}>
+                          <td style={{ textAlign: 'center' }}>
+                            <input
+                              type="checkbox"
+                              checked={selectedIds.includes(c.id)}
+                              onChange={() => toggleSelect(c.id)}
+                            />
+                          </td>
                           <td data-label="Reg.">{c.reg_no || (idx + 1)}</td>
                           <td data-label="Channel">
                             <div className="cell-content">
@@ -1931,7 +2012,7 @@ function AdminContent() {
                         </tr>
                         {expandedIds.includes(c.id) && (
                           <tr className="drawer-row">
-                            <td colSpan="8" style={{ padding: 0 }}>
+                            <td colSpan="9" style={{ padding: 0 }}>
                                <div className="credential-drawer">
                                   <div className="drawer-item"><strong>Created</strong> <span>{c.open_date ? new Date(c.open_date).toLocaleDateString() : '---'}</span></div>
                                   <div className="drawer-item"><strong>Gmail</strong> <span>{c.gmail || '---'}</span></div>
@@ -1944,7 +2025,7 @@ function AdminContent() {
                       </Fragment>
                     ))}
                     {activeChannels.length === 0 && (
-                      <tr><td colSpan="8" style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>No matching channels found. Try adjusting your filters.</td></tr>
+                      <tr><td colSpan="9" style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>No matching channels found. Try adjusting your filters.</td></tr>
                     )}
                   </tbody>
                 </>
@@ -1954,6 +2035,13 @@ function AdminContent() {
                 <>
                   <thead>
                     <tr>
+                      <th style={{ width: '30px', textAlign: 'center' }}>
+                        <input
+                          type="checkbox"
+                          checked={activeChannels.length > 0 && activeChannels.every(c => selectedIds.includes(c.id))}
+                          onChange={() => toggleSelectAllChannels(activeChannels)}
+                        />
+                      </th>
                       <th>Reg.</th>
                       <th>Channel</th>
                       <th>Specialist</th>
@@ -1966,7 +2054,14 @@ function AdminContent() {
                   <tbody>
                     {activeChannels.map((c, idx) => (
                       <Fragment key={c.id}>
-                        <tr key={c.id}>
+                        <tr key={c.id} style={{ background: selectedIds.includes(c.id) ? '#f8faff' : 'inherit' }}>
+                          <td style={{ textAlign: 'center' }}>
+                            <input
+                              type="checkbox"
+                              checked={selectedIds.includes(c.id)}
+                              onChange={() => toggleSelect(c.id)}
+                            />
+                          </td>
                           <td data-label="Reg.">{c.reg_no || (idx + 1)}</td>
                           <td data-label="Channel"><div style={{ fontWeight: 600, fontSize: '12.5px' }}><a href={c.channel_link} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none' }}>{c.channel_name}</a></div></td>
                           <td data-label="Specialist"><div style={{ fontSize: '12px' }}>{c.worker_name || 'PENDING'}</div></td>
@@ -1988,7 +2083,7 @@ function AdminContent() {
                         </tr>
                         {expandedIds.includes(c.id) && (
                           <tr className="drawer-row">
-                             <td colSpan="7" style={{ padding: 0 }}>
+                              <td colSpan="8" style={{ padding: 0 }}>
                                 <div className="credential-drawer">
                                    <div className="drawer-item"><strong>Date</strong> <span>{c.open_date ? new Date(c.open_date).toLocaleDateString() : '---'}</span></div>
                                    <div className="drawer-item"><strong>Gmail</strong> <span>{c.gmail || '---'}</span></div>
@@ -2001,7 +2096,7 @@ function AdminContent() {
                       </Fragment>
                     ))}
                     {activeChannels.length === 0 && (
-                      <tr><td colSpan="6" style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>No matching channels found. Try adjusting your filters.</td></tr>
+                      <tr><td colSpan="8" style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>No matching channels found. Try adjusting your filters.</td></tr>
                     )}
                   </tbody>
                 </>

@@ -1222,6 +1222,8 @@ tr:hover { background-color: rgba(0,0,0,0.01); }
   padding: 1.25rem 0.75rem;
   color: var(--adm-text);
   transition: transform 0.25s ease;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .sidebar-logo {
