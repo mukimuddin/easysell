@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { verifySession } from './lib/session';
+import { isAdminUserBlocked } from './lib/adminBlocked';
+import { getAdminAuthVersion } from './lib/adminAuthVersion';
 
 function clearAdminTokenCookie(response) {
   response.cookies.set('adminToken', '', {
@@ -40,15 +42,15 @@ export async function middleware(request) {
       return NextResponse.redirect(new URL('/admin/login', request.url));
     }
 
-    const origin = request.nextUrl.origin;
     try {
-      const sr = await fetch(new URL('/api/admin/session-check', origin), {
-        headers: { cookie: request.headers.get('cookie') || '' },
-        cache: 'no-store',
-      });
-      if (sr.status === 403) {
+      // Directly check DB instead of internal fetch (fixes loopback/ECONNREFUSED on shared hosting)
+      const blocked = await isAdminUserBlocked(payload.userId);
+      const dbAuthVer = await getAdminAuthVersion(payload.userId);
+      const tokenAuthVer = Number(payload.authVersion ?? 0);
+
+      if (blocked || tokenAuthVer !== dbAuthVer) {
         if (path.startsWith('/api/')) {
-          const res = NextResponse.json({ error: 'Account blocked' }, { status: 403 });
+          const res = NextResponse.json({ error: 'Session invalid or account blocked' }, { status: 403 });
           clearAdminTokenCookie(res);
           return res;
         }
@@ -57,7 +59,7 @@ export async function middleware(request) {
         return res;
       }
     } catch (e) {
-      console.error('middleware session-check', e);
+      console.error('middleware session-check error', e);
     }
   }
 

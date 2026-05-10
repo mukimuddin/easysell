@@ -3,7 +3,7 @@ import { parse } from 'node:url';
 import next from 'next';
 import { Server } from 'socket.io';
 
-const dev = process.env.NODE_ENV !== 'production';
+const dev = false;
 const hostname = 'localhost';
 const port = process.env.PORT || 3000;
 const allowedSocketOrigin = process.env.SOCKET_ALLOWED_ORIGIN || (dev ? 'http://localhost:3000' : null);
