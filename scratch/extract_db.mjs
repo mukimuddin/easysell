@@ -2,17 +2,34 @@ import mysql from 'mysql2/promise';
 import fs from 'fs';
 import path from 'path';
 
-const DATABASE_URL = 'mysql://SW62n4S6YfW5wSz.root:vvY0htEqzqbGuDJH@gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/test?sslaccept=accept_invalid_certs';
+// Load .env manually to avoid extra dependencies
+function getEnv(key) {
+  try {
+    const envPath = path.join(process.cwd(), '.env');
+    if (fs.existsSync(envPath)) {
+      const env = fs.readFileSync(envPath, 'utf8');
+      const lines = env.split('\n');
+      for (const line of lines) {
+        const [k, v] = line.split('=');
+        if (k === key) return v.trim();
+      }
+    }
+  } catch (e) {}
+  return null;
+}
+
+const DATABASE_URL = getEnv('DATABASE_URL') || 'mysql://SW62n4S6YfW5wSz.root:vvY0htEqzqbGuDJH@gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/test?sslaccept=accept_invalid_certs';
 
 async function extract() {
+  console.log('Connecting to database...');
   const connection = await mysql.createConnection({
     uri: DATABASE_URL,
-    ssl: {
+    ssl: DATABASE_URL.includes('tidbcloud') ? {
       minVersion: 'TLSv1.2',
       rejectUnauthorized: true
-    }
+    } : undefined
   });
-  console.log('Connected to TiDB');
+  console.log('Connected successfully');
 
   const [tables] = await connection.query('SHOW TABLES');
   const tableNames = tables.map(t => Object.values(t)[0]);
@@ -47,7 +64,6 @@ async function extract() {
           if (typeof v === 'number') return v;
           if (v instanceof Date) return `'${v.toISOString().slice(0, 19).replace('T', ' ')}'`;
           if (typeof v === 'string') {
-             // Handle escaping more robustly
              return `'${v.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '\\r')}'`;
           }
           return `'${v}'`;
@@ -62,9 +78,12 @@ async function extract() {
 
   const outputPath = path.join(process.cwd(), 'easysell_db_backup.sql');
   fs.writeFileSync(outputPath, sqlDump);
-  console.log(`Backup completed! Saved to ${outputPath}`);
+  console.log(`\n✅ Backup completed! Saved to: ${outputPath}`);
 
   await connection.end();
 }
 
-extract().catch(console.error);
+extract().catch(err => {
+    console.error('❌ Backup failed:', err.message);
+    process.exit(1);
+});
